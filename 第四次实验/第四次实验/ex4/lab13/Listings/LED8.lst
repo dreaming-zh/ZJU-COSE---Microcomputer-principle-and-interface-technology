@@ -1,0 +1,76 @@
+C51 COMPILER V9.57.0.0   LED8                                                              06/05/2022 13:42:58 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE LED8
+OBJECT MODULE PLACED IN .\Objects\LED8.obj
+COMPILER INVOKED BY: F:\Keil\C51\BIN\C51.EXE LED8.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\LED8.ls
+                    -t) TABS(2) OBJECT(.\Objects\LED8.obj)
+
+line level    source
+
+   1          #include <stc15.h>
+   2          #include "gdef.h"
+   3          #include "led8.h"
+   4          
+   5          /*************  显示段码位码数据表    **************/
+   6          u8 code t_display[]={                       //8段数字字库
+   7          //   0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+   8              0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71,
+   9          // black  -    H    J    K    L    N    o    P    U     t    G    Q    r   M    y
+  10              0x00,0x40,0x76,0x1E,0x70,0x38,0x37,0x5C,0x73,0x3E,0x78,0x3d,0x67,0x50,0x37,0x6e,
+  11          //   0.   1.   2.   3.   4.   5.   6.   7.   8.   9.   -1
+  12              0xBF,0x86,0xDB,0xCF,0xE6,0xED,0xFD,0x87,0xFF,0xEF,0x46};   
+  13          
+  14          u8 code T_COM[]={0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};      //位码
+  15          
+  16          
+  17          /*************  IO口定义    **************/
+  18          sbit    P_HC595_SER   = P4^0;   //pin 14    SER     data input
+  19          sbit    P_HC595_RCLK  = P5^4;   //pin 12    RCLk    store (latch) clock
+  20          sbit    P_HC595_SRCLK = P4^3;   //pin 11    SRCLK   Shift data clock
+  21          
+  22          /*************  本地变量声明    **************/
+  23          u8  LED8[8];        //显示缓冲
+  24          static u8  display_index=0;  //显示位索引
+  25          
+  26          /**************** 向HC595发送一个字节函数 ******************/
+  27          void Send_595(u8 dat)
+  28          {       
+  29   1          u8  i;
+  30   1          for(i=0; i<8; i++)
+  31   1          {
+  32   2              dat <<= 1;
+  33   2              P_HC595_SER   = CY;
+  34   2              P_HC595_SRCLK = 1;
+  35   2              P_HC595_SRCLK = 0;
+  36   2          }
+  37   1      }
+  38          
+  39          /********************** 显示扫描函数 ************************/
+  40          void DisplayScan(void)
+  41          {   
+  42   1          Send_595(~T_COM[display_index]);                //输出位码
+  43   1          Send_595(t_display[LED8[display_index]]);   //输出段码
+  44   1      
+  45   1          P_HC595_RCLK = 1;
+  46   1          P_HC595_RCLK = 0;                           //锁存输出数据
+  47   1          if(++display_index >= 8)    display_index = 0;  //8位结束回0
+  48   1      }
+  49          
+  50          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     59    ----
+C51 COMPILER V9.57.0.0   LED8                                                              06/05/2022 13:42:58 PAGE 2   
+
+   CONSTANT SIZE    =     51    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,113 @@
+A51 MACRO ASSEMBLER  1                                                                    05/22/2022 15:06:54 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\1.obj
+ASSEMBLER INVOKED BY: E:\Keil_v5\C51\BIN\A51.EXE 1.a51 SET(SMALL) DEBUG PRINT(.\Listings\1.lst) OBJECT(.\Objects\1.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+0000                   1             ORG 0000H
+0000 2100              2                 JMP BEG
+0100                   3             ORG 0100H
+0100 752020            4     BEG:    MOV 20H,#20H       ;给20H单元赋值
+0103 752121            5             MOV 21H,#21H       ;给21H单元赋值
+0106 753030            6             MOV 30H,#30H       ;给30H单元赋值
+0109 753131            7             MOV 31H,#31H       ;给31H单元赋值
+                       8     
+010C A820              9             MOV R0,20H
+010E E4               10             CLR A
+010F E8               11             MOV A,R0          
+0110 3530             12             ADDC A,30H
+0112 F540             13             MOV 40H,A
+0114 A821             14             MOV R0,21H
+0116 E4               15             CLR A
+0117 E6               16             MOV A,@R0
+0118 3531             17             ADDC A,31H
+011A F541             18                 MOV 41H,A
+                      19     
+011C E521             20             MOV A,21H
+011E 8531F0           21                     MOV B,31H
+0121 A4               22                     MUL AB
+0122 F8               23                     MOV R0,A       
+0123 A9F0             24                     MOV R1,B       
+                      25     
+0125 E521             26                     MOV A,21H
+0127 8530F0           27                     MOV B,30H
+012A A4               28                     MUL AB
+012B FA               29                     MOV R2,A       
+012C ABF0             30                     MOV R3,B       
+                      31     
+012E E520             32                     MOV A,20H
+0130 8531F0           33                     MOV B,31H
+0133 A4               34                     MUL AB
+0134 FC               35                     MOV R4,A       
+0135 ADF0             36                     MOV R5,B       
+                      37     
+0137 E520             38                     MOV A,20H
+0139 8530F0           39                     MOV B,30H
+013C A4               40                     MUL AB
+013D FE               41                     MOV R6,A       
+013E AFF0             42                     MOV R7,B       
+                      43     
+0140 8853             44                     MOV 53H,R0
+0142 E9               45                     MOV A,R1
+0143 2A               46                     ADD A,R2
+0144 FA               47                     MOV R2,A
+0145 7400             48                     MOV A,#00H
+0147 3B               49                     ADDC A,R3
+0148 C3               50                     CLR C
+0149 FB               51                     MOV R3,A
+014A 7400             52                     MOV A,#00H
+014C 3F               53                     ADDC A,R7
+014D C3               54                     CLR C
+014E FF               55                     MOV R7,A
+                      56     
+014F EA               57                     MOV A,R2
+0150 2C               58                     ADD A,R4
+A51 MACRO ASSEMBLER  1                                                                    05/22/2022 15:06:54 PAGE     2
+
+0151 FC               59                     MOV R4,A
+0152 8C52             60                     MOV 52H,R4
+0154 7400             61                     MOV A,#00H
+0156 3B               62                     ADDC A,R3
+0157 C3               63                     CLR C
+0158 FB               64                     MOV R3,A
+0159 7400             65                     MOV A,#00H
+015B 3F               66                     ADDC A,R7
+015C C3               67                     CLR C
+015D FF               68                     MOV R7,A
+                      69                     
+015E EB               70                     MOV A,R3
+015F 2D               71                     ADD A,R5
+0160 FD               72                     MOV R5,A
+0161 7400             73                     MOV A,#00H
+0163 3F               74                     ADDC A,R7
+0164 C3               75                     CLR C
+0165 FF               76                     MOV R7,A 
+                      77     
+0166 ED               78                     MOV A,R5
+0167 2E               79                     ADD A,R6
+0168 F551             80                     MOV 51H,A
+016A 7400             81                     MOV A,#00H
+016C 3F               82                     ADDC A,R7
+016D C3               83                     CLR C
+016E F550             84                     MOV 50H,A  
+0170 80FE             85             SJMP $
+                      86             END 
+A51 MACRO ASSEMBLER  1                                                                    05/22/2022 15:06:54 PAGE     3
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+B. . . . . . . . .  D ADDR   00F0H   A   
+BEG. . . . . . . .  C ADDR   0100H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

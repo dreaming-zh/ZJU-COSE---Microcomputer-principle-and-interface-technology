@@ -1,0 +1,176 @@
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 14:19:37 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE ________
+OBJECT MODULE PLACED IN .\Objects\移位学号.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE 移位学号.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\
+                    -移位学号.lst) TABS(2) OBJECT(.\Objects\移位学号.obj)
+
+line level    source
+
+   1          #include <stc15.h>
+   2          #include <stdio.h>
+   3          #include <string.h>
+   4          #include "gdef.h"
+   5          #include "led8.h"
+   6          #include "serial.h"
+   7          
+   8          /*************  外部变量和本地变量声明    **************/  
+   9          extern u8  LED8[8];         //显示缓冲
+  10          bit F_500=0;    //500ms中断软标志
+  11          int a[10]={3,2,0,0,1,0,4,8,6,9};
+  12          
+  13          /**************** T0定时器初始化函数 ******************/
+  14          void T0_Init()
+  15          {
+  16   1        #define     Timer_Reload   (65536UL -(MAIN_Fosc / 1000))       //Timer0 中断频率, 1000次/秒
+  17   1      
+  18   1          AUXR = 0x80;    //Timer0 set as 1T, 16 bits timer auto-reload
+  19   1          TH0 = (u8)(Timer_Reload / 256);
+  20   1          TL0 = (u8)(Timer_Reload % 256);
+  21   1          TR0 = 1;    //Timer0 run
+  22   1      }   
+  23          
+  24          /**************** 中断初始化函数 ******************/
+  25          void INT_Init()
+  26          {
+  27   1        ET0 = 1;    //Timer0 interrupt enable
+  28   1        PT0 = 1;
+  29   1        ET1 = 0;  //Tim1仅当作波特率发生器
+  30   1          ES = 1;   
+  31   1        EA = 1;     //允许总中断
+  32   1      }
+  33          
+  34          /********************** 端口初始化 ************************/
+  35          void Port_Init()
+  36          {
+  37   1          P0M1 = 0;   P0M0 = 0;   //设置为准双向口
+  38   1          P1M1 = 0;   P1M0 = 0;   //设置为准双向口
+  39   1          P2M1 = 0;   P2M0 = 0;   //设置为准双向口
+  40   1          P3M1 = 0;   P3M0 = 0;   //设置为准双向口
+  41   1          P4M1 = 0;   P4M0 = 0;   //设置为准双向口
+  42   1          P5M1 = 0;   P5M0 = 0;   //设置为准双向口
+  43   1          P6M1 = 0;   P6M0 = 0;   //设置为准双向口
+  44   1          P7M1 = 0;   P7M0 = 0;   //设置为准双向口
+  45   1      }
+  46          
+  47          /********************** T0 1ms中断函数 ************************/
+  48          void T0_int (void) interrupt 1
+  49          {
+  50   1        static u16 Count500=500;
+  51   1      
+  52   1          DisplayScan();  //1ms扫描显示一位
+  53   1        if(--Count500==0) {
+  54   2          F_500=1;
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 14:19:37 PAGE 2   
+
+  55   2          Count500=500;
+  56   2        }
+  57   1      }        
+  58          
+  59          u8  hour,minute; //RTC变量
+  60          void xuehao(int j)
+  61          {
+  62   1      LED8[0] = a[(j)%10];
+  63   1      LED8[1] = a[(j+1)%10];
+  64   1      LED8[2] = a[(j+2)%10];
+  65   1      LED8[3] = a[(j+3)%10];
+  66   1      LED8[4] = a[(j+4)%10];
+  67   1      LED8[5] = a[(j+5)%10];
+  68   1      LED8[6] = a[(j+6)%10];
+  69   1      LED8[7] = a[(j+7)%10];  
+  70   1      }
+  71          
+  72          enum {HH,MM};
+  73          bit interpret(u8 *hour,u8 *minute)
+  74          {
+  75   1        u8 xdata string[20],xdata *sptr,hhmm=HH, tmpH, tmpM;  
+  76   1        u16 dtype,dvalue,dlenth;
+  77   1        bit valid=0,endline;
+  78   1      
+  79   1        while(RXready()) {
+  80   2          scanf("%s",string);     
+  81   2          if(strstr(string,"set")) valid=1; break;
+  82   2        }   
+  83   1        if(!valid) return 0;   
+  84   1        
+  85   1        while(RXready()) {
+  86   2          scanf("%s",string); sptr=string;
+  87   2            for(endline=0;!endline;) {
+  88   3                dtype=sscanf(sptr,"%d%n",&dvalue,&dlenth);
+  89   3            switch(dtype) {
+  90   4                case 0: sptr++; break;
+  91   4                case 1: sptr+=dlenth; sptr++;
+  92   4                  switch(hhmm) {
+  93   5                    case HH:if(dvalue==0||dvalue==1) tmpH=dvalue; else valid=0; break;
+  94   5                    case MM:if(dvalue==0||dvalue==1||dvalue==2) tmpM=dvalue; else valid=0; break;
+  95   5                default: break;
+  96   5                  }
+  97   4                  hhmm++; 
+  98   4                  break;  
+  99   4                default:endline=1;
+ 100   4                }
+ 101   3          }
+ 102   2          }
+ 103   1        if(valid){
+ 104   2          *hour=tmpH, *minute=tmpM;
+ 105   2          } 
+ 106   1          
+ 107   1        return valid;
+ 108   1      }  
+ 109          void RunRTC(void)
+ 110          {
+ 111   1        int i,j,k;
+ 112   1        interpret(&hour,&minute);
+ 113   1        if(F_500) 
+ 114   1        {                 
+ 115   2          F_500=0;i=(i+1)%3;k=(k+1)%2;
+ 116   2          if(hour==1)
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 14:19:37 PAGE 3   
+
+ 117   2          {
+ 118   3            if(minute==0) {j=(j+1)%10;xuehao(j);}
+ 119   3            else if(minute==1)  {if(k==0){j=(j+1)%10;xuehao(j);}}
+ 120   3            else if(minute==2)  {if(i==0){j=(j+1)%10;xuehao(j);}}
+ 121   3          }
+ 122   2          else if(hour==0)
+ 123   2          {
+ 124   3            if(minute==0) {j=(j+9)%10;xuehao(j);}
+ 125   3            else if(minute==1)  {if(k==0){j=(j+9)%10;xuehao(j);}}
+ 126   3            else if(minute==2)  {if(i==0){j=(j+9)%10;xuehao(j);}}
+ 127   3          }
+ 128   2          printf("方向，速度:%bd，%bd\n",hour,minute);
+ 129   2        }
+ 130   1          
+ 131   1      }
+ 132          
+ 133          
+ 134          /********************** 主函数 ************************/
+ 135          void main(void)
+ 136          {
+ 137   1        Port_Init();
+ 138   1        T0_Init();
+ 139   1        INT_Init();
+ 140   1        Uart_Init(38400);
+ 141   1      
+ 142   1          hour   = 1;    //初始化时间值
+ 143   1          minute = 0;
+ 144   1          while(1) {
+ 145   2            RunRTC();
+ 146   2          }
+ 147   1      } 
+ 148          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    866    ----
+   CONSTANT SIZE    =     33    ----
+   XDATA SIZE       =   ----      25
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     24      16
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1       2
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

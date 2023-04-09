@@ -1,0 +1,125 @@
+C51 COMPILER V9.59.0.0   XUEHAO                                                            06/05/2022 12:21:46 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE XUEHAO
+OBJECT MODULE PLACED IN .\Objects\xuehao.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE xuehao.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\xu
+                    -ehao.lst) TABS(2) OBJECT(.\Objects\xuehao.obj)
+
+line level    source
+
+   1          #include <stc15.h>
+   2          #include "led8.h"
+   3          /************* 外部变量和本地变量声明 **************/
+   4          extern u8 LED8[8]; //显示缓冲，在 LED8.c 中声明
+   5          bit F_T0=0; //1ms 中断软标志
+   6          bit F_incdec=0,F_stop=0; //运行参数，初始为增量计数器，不停止
+   7          u8 Count=0; //unsigned char 与 s8,u16 在 led8.h 中定义
+   8          /**************** T0 中断初始化函数 ******************/
+   9          void T0_Init()
+  10          {
+  11   1      #define MAIN_Fosc 22118400L //定义主时钟
+  12   1      #define Timer0_Reload (65536UL -(MAIN_Fosc / 1000))
+  13   1      AUXR = 0x80; //Timer0 set as 1T, 16 bits timer auto-reload,
+  14   1      TH0 = (u8)(Timer0_Reload / 256);
+  15   1      TL0 = (u8)(Timer0_Reload % 256);
+  16   1      ET0 = 1; //T0 interrupt enable
+  17   1      PT0 = 1; //设置 T0 我高优先级
+  18   1      TR0 = 1; //启动 T0
+  19   1      }
+  20          /**************** INT0/INT1 中断初始化函数 ******************/
+  21          void INT_Init()
+  22          {
+  23   1      IT0 = 0; //INT0 下降沿中断
+  24   1      IE1 = 0; //外中断 1 标志位
+  25   1      IE0 = 0; //外中断 0 标志位
+  26   1      EX1 = 1; //INT1 Enable
+  27   1      EX0 = 1; //INT0 Enable
+  28   1      EA = 1; //允许总中断
+  29   1      }
+  30          /********************** 端口初始化 ************************/
+  31          void Port_Init()
+  32          {
+  33   1      P0M1 = 0; P0M0 = 0; //设置为准双向口
+  34   1      P1M1 = 0; P1M0 = 0; //设置为准双向口
+  35   1      P2M1 = 0; P2M0 = 0; //设置为准双向口
+  36   1      P3M1 = 0; P3M0 = 0; //设置为准双向口
+  37   1      P4M1 = 0; P4M0 = 0; //设置为准双向口
+  38   1      P5M1 = 0; P5M0 = 0; //设置为准双向口
+  39   1      P6M1 = 0; P6M0 = 0; //设置为准双向口
+  40   1      P7M1 = 0; P7M0 = 0; //设置为准双向口
+  41   1      }
+  42          void delay_ms(u8 ms)
+  43          {
+  44   1      u16 i;
+  45   1      do{
+  46   2      i = MAIN_Fosc / 16000;
+  47   2      while(--i) ; //16T per loop
+  48   2      }while(--ms);
+  49   1      }
+  50          /********************* INT0 中断函数 *************************/
+  51          void INT0_int (void) interrupt 0 //进中断时已经清除标志
+  52          {
+  53   1      F_incdec^=1; //sw17 乒乓键，改变计数方向标志
+  54   1      delay_ms(20); //软件延时消抖动
+C51 COMPILER V9.59.0.0   XUEHAO                                                            06/05/2022 12:21:46 PAGE 2   
+
+  55   1      }
+  56          /********************* INT1 中断函数 *************************/
+  57          void INT1_int (void) interrupt 2 //进中断时已经清除标志
+  58          {
+  59   1      F_stop^=0; //sw18 乒乓键，改变计数启停标志
+  60   1      delay_ms(20); //软件延时消抖动
+  61   1      }
+  62          /********************** T0 1ms 中断函数 ************************/
+  63          void T0_int (void) interrupt 1
+  64          {
+  65   1      DisplayScan(); //1ms 扫描显示一位
+  66   1      F_T0 = 1; //1ms 时间到标志
+  67   1      }
+  68          
+  69          
+  70          void main(void)
+  71          {
+  72   1      u16 i=0;
+  73   1      u8 xuehao[10]={3,2,0,0,1,0,4,8,6,9};
+  74   1      Port_Init(); //初始化
+  75   1      T0_Init();
+  76   1      INT_Init();
+  77   1      for(i=0; i<8; i++) LED8[i] = DIS_BLACK; //上电消隐
+  78   1      while(1) {
+  79   2      if(F_T0) { //1ms 到
+  80   3      F_T0 = 0;
+  81   3      
+  82   3      if(F_stop==1){i++;F_stop=0;}
+  83   3        
+  84   3      if(F_incdec==1){i--;F_incdec=0;}
+  85   3        
+  86   3      LED8[0]=xuehao[(0+i)%10];
+  87   3      LED8[1]=xuehao[(1+i)%10];
+  88   3      LED8[2]=xuehao[(2+i)%10];
+  89   3      LED8[3]=xuehao[(3+i)%10];
+  90   3      LED8[4]=xuehao[(4+i)%10];
+  91   3      LED8[5]=xuehao[(5+i)%10];
+  92   3      LED8[6]=xuehao[(6+i)%10];
+  93   3      LED8[7]=xuehao[(7+i)%10];
+  94   3      
+  95   3      
+  96   3      
+  97   3      }
+  98   2      }
+  99   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    443    ----
+   CONSTANT SIZE    =     10    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

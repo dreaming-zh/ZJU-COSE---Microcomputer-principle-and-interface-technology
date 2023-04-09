@@ -1,0 +1,5 @@
+".\Objects\STARTUP.obj",
+".\Objects\LED8.obj",
+".\Objects\wuwei.obj" 
+TO ".\Objects\5wei" 
+PRINT(".\Listings\5wei.m51") RAMSIZE(256) 

@@ -1,0 +1,5 @@
+".\Objects\LED8.obj",
+".\Objects\serial.obj",
+".\Objects\main.obj" 
+TO ".\Objects\4" 
+PRINT(".\Listings\4.m51") RAMSIZE(256) 

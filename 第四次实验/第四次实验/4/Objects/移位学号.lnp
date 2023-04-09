@@ -1,0 +1,6 @@
+".\Objects\STARTUP.obj",
+".\Objects\LED8.obj",
+".\Objects\serial.obj",
+".\Objects\移位学号.obj" 
+TO ".\Objects\移位学号" 
+PRINT(".\Listings\移位学号.m51") RAMSIZE(256) 

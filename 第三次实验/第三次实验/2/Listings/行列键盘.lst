@@ -1,0 +1,106 @@
+C51 COMPILER V9.60.0.0   ________                                                          05/26/2022 23:17:15 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE ________
+OBJECT MODULE PLACED IN .\Objects\ÐÐÁÐ¼üÅÌ.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE ÐÐÁÐ¼üÅÌ.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\ÐÐÁ
+                    -Ð¼üÅÌ.lst) TABS(2) OBJECT(.\Objects\ÐÐÁÐ¼üÅÌ.obj)
+
+line level    source
+
+   1          /*************  ±¾³ÌÐò¹¦ÄÜËµÃ÷  **************
+   2          ÏÔÊ¾Ð§¹ûÎª: 24Ð¡Ê±Ê±ÖÓ HH-MM-SS
+   3          ¹¤×÷Ä£Ê½£ºÕý³£×ßÊ±·½Ê½ºÍÐÞ¸ÄÊ±ÖÓ·½Ê½
+   4          ÖÐ¶Ï¼ü£¬°´SW17ÐÞ¸Ä£¬°´SW18ÇÐ»»µ±Ç°Î»
+   5          ÐÞ¸Ä·½Ê½ÏÂ£¬µ±Ç°Î»ÉÁË¸£¬×Ô¶¯ÇÐ»»µ½Î»
+   6          ÍË³öÐÞ¸Äºó£¬ÖØÐÂ½øÈëÐÞ¸Ä£¬ÐÞ¸ÄÎ»¼Ç´æ
+   7          ******************************************/ 
+   8          #include <stc15.h>
+   9          #include "led8.h"
+  10          
+  11          /*************  Íâ²¿±äÁ¿ºÍ±¾µØ±äÁ¿ÉùÃ÷    **************/  
+  12          extern u8  LED8[8];         //ÏÔÊ¾»º³å
+  13          bit F_KS=0;
+  14          
+  15          /**************** T0ÖÐ¶Ï³õÊ¼»¯º¯Êý ******************/
+  16          void T0_Init()
+  17          {
+  18   1        #define     MAIN_Fosc       22118400L   //¶¨ÒåÖ÷Ê±ÖÓ
+  19   1        #define     Timer0_Reload   (65536UL -(MAIN_Fosc / 1000))       //Timer 0 ÖÐ¶ÏÆµÂÊ, 1000´Î/Ãë
+  20   1      
+  21   1          AUXR = 0x80;    //Timer0 set as 1T, 16 bits timer auto-reload, 
+  22   1          TH0 = (u8)(Timer0_Reload / 256);
+  23   1          TL0 = (u8)(Timer0_Reload % 256);
+  24   1        ET0 = 1;    //Timer0 interrupt enable
+  25   1        PT0 = 1;
+  26   1          TR0 = 1;    //Tiner0 run        
+  27   1        EA = 1;     //ÔÊÐí×ÜÖÐ¶Ï
+  28   1      } 
+  29          
+  30          /********************** ¶Ë¿Ú³õÊ¼»¯ ************************/
+  31          void Port_Init()
+  32          {
+  33   1          P0M1 = 0;   P0M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  34   1          P1M1 = 0;   P1M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  35   1          P2M1 = 0;   P2M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  36   1          P3M1 = 0;   P3M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  37   1          P4M1 = 0;   P4M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  38   1          P5M1 = 0;   P5M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  39   1          P6M1 = 0;   P6M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  40   1          P7M1 = 0;   P7M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  41   1      }
+  42          
+  43          /********************** T0 1msÖÐ¶Ïº¯Êý ************************/
+  44          void T0_int (void) interrupt 1
+  45          {
+  46   1        static u8 Count50=50;
+  47   1      
+  48   1          DisplayScan();  //1msÉ¨ÃèÏÔÊ¾Ò»Î»
+  49   1        if(--Count50==0) {
+  50   2          F_KS=1;
+  51   2          Count50 = 50;
+  52   2        }  
+  53   1      }        
+  54          
+C51 COMPILER V9.60.0.0   ________                                                          05/26/2022 23:17:15 PAGE 2   
+
+  55          extern u8 KeyCode;    //¸øÓÃ»§Ê¹ÓÃµÄ¼üÂë, 1~16ÓÐÐ§ 
+  56          void Key_Init(void);
+  57          void IO_KeyScan(void);
+  58          
+  59          /********************** Ö÷º¯Êý ************************/
+  60          void main(void)
+  61          {
+  62   1        u8 i;
+  63   1      
+  64   1        Port_Init();
+  65   1        T0_Init();
+  66   1        Key_Init();  
+  67   1      
+  68   1        for(i=0;i<8;i++) LED8[i] = DIS_BLACK;    //³õÊ¼Ï¨Ãð
+  69   1          while(1) {
+  70   2          if(F_KS) {          //50ms£¬É¨Ãè¼üÅÌ
+  71   3            IO_KeyScan();
+  72   3            F_KS=0;
+  73   3          }
+  74   2        
+  75   2            if(KeyCode > 0) {       //ÓÐ¼ü°´ÏÂ£¬´¦Àí¼ü
+  76   3            LED8[7] = KeyCode-1; 
+  77   3            KeyCode=0;
+  78   3          }
+  79   2        }
+  80   1      } 
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    181    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,6 @@
+".\Objects\LED8.obj",
+".\Objects\NTC.obj",
+".\Objects\serial.obj",
+".\Objects\VddNTC.obj" 
+TO ".\Objects\2" 
+PRINT(".\Listings\2.m51") RAMSIZE(256) 

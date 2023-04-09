@@ -1,0 +1,4 @@
+".\Objects\STARTUP.obj",
+".\Objects\读取ADC.obj" 
+TO ".\Objects\读取ADC键位" 
+PRINT(".\Listings\读取ADC键位.m51") RAMSIZE(256) 

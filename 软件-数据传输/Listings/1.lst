@@ -1,0 +1,66 @@
+A51 MACRO ASSEMBLER  1                                                                    05/11/2022 20:53:33 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\1.obj
+ASSEMBLER INVOKED BY: E:\Keil_v5\C51\BIN\A51.EXE 1.a51 SET(SMALL) DEBUG PRINT(.\Listings\1.lst) OBJECT(.\Objects\1.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+0000                   1             ORG 0000H
+0000 2100              2             JMP BEG
+0100                   3             ORG 0100H
+0100                   4     BEG:
+0100 7F14              5             MOV R7,#20
+0102 7840              6             MOV R0,#40H
+                       7             
+0104                   8     LP1:
+0104 F6                9             MOV @R0,A
+0105 04               10             INC A
+0106 08               11             INC R0
+0107 DFFB             12             DJNZ R7,LP1
+                      13     
+0109 7F14             14             MOV R7,#20
+010B 7853             15             MOV R0,#40H+20-1
+010D 7990             16             MOV R1,#90H
+010F 900040           17             MOV DPTR,#0040H
+                      18             
+0112                  19     LP2:
+0112 E6               20             MOV A,@R0
+0113 F7               21             MOV @R1,A
+0114 F0               22             MOVX @DPTR,A
+0115 18               23             DEC R0
+0116 09               24             INC R1
+0117 A3               25             INC DPTR
+0118 DFF8             26             DJNZ R7,LP2
+                      27             
+011A 7F14             28             MOV R7,#20
+011C 7850             29             MOV R0,#50H
+011E 7990             30             MOV R1,#90H
+                      31             
+0120                  32     LP3:
+0120 E7               33             MOV A,@R1
+0121 F6               34             MOV @R0,A
+0122 08               35             INC R0
+0123 09               36             INC R1
+0124 DFFA             37             DJNZ R7,LP3
+0126 80FE             38     SJMP $
+                      39     END
+A51 MACRO ASSEMBLER  1                                                                    05/11/2022 20:53:33 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+BEG. . . . . . . .  C ADDR   0100H   A   
+LP1. . . . . . . .  C ADDR   0104H   A   
+LP2. . . . . . . .  C ADDR   0112H   A   
+LP3. . . . . . . .  C ADDR   0120H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

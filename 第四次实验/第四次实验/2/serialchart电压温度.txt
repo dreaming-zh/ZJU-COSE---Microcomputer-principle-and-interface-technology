@@ -1,0 +1,32 @@
+[_setup_]
+
+port=COM3
+baudrate=38400
+
+width=1350
+height=200
+background_color = transparent
+
+
+grid_v_origin = 100
+grid_v_step = 10
+grid_v_color = #EEE
+grid_v_origin_color = green
+grid_h_step = 20 
+grid_h_color = #EEE
+grid_h_origin = 100 
+grid_h_origin_color = green
+
+[_default_]
+min=0
+max=40
+
+[Field1]
+color=red
+
+
+while(1)
+ {
+     printf("%d\n", Field1);
+     delay_ms(50);
+ }

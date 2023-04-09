@@ -1,0 +1,61 @@
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                    05/22/2022  15:08:32  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22.2.0, INVOKED BY:
+E:\KEIL_V5\C51\BIN\BL51.EXE .\Objects\1.obj TO .\Objects\数据传输 PRINT (.\Listings\数据传输.m51) RAMSIZE (256)
+
+
+INPUT MODULES INCLUDED:
+  .\Objects\1.obj (1)
+
+
+LINK MAP OF MODULE:  .\Objects\数据传输 (1)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0027H     ABSOLUTE     
+
+
+
+SYMBOL TABLE OF MODULE:  .\Objects\数据传输 (1)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        1
+  C:001BH         SYMBOL        ASCII
+  C:0009H         SYMBOL        LOOP
+  C:0024H         SYMBOL        LOOP1
+  C:0020H         SYMBOL        NEXT
+  C:0000H         LINE#         2
+  C:0002H         LINE#         3
+  C:0004H         LINE#         4
+  C:0006H         LINE#         5
+  C:0009H         LINE#         7
+  C:000AH         LINE#         8
+  C:000DH         LINE#         9
+  C:000EH         LINE#         10
+  C:000FH         LINE#         11
+  C:0010H         LINE#         12
+  C:0011H         LINE#         13
+  C:0014H         LINE#         14
+  C:0015H         LINE#         15
+  C:0016H         LINE#         16
+  C:0017H         LINE#         17
+  C:0019H         LINE#         18
+  C:001BH         LINE#         20
+  C:001DH         LINE#         21
+  C:0020H         LINE#         22
+  C:0022H         LINE#         23
+  C:0024H         LINE#         24
+  C:0026H         LINE#         25
+  -------         ENDMOD        1
+
+Program Size: data=8.0 xdata=0 code=39
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

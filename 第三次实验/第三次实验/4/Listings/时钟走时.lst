@@ -1,0 +1,174 @@
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 13:00:21 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE ________
+OBJECT MODULE PLACED IN .\Objects\时钟走时.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE 时钟走时.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\
+                    -时钟走时.lst) TABS(2) OBJECT(.\Objects\时钟走时.obj)
+
+line level    source
+
+   1          #include <stc15.h>
+   2          #include "led8.h"
+   3          /************* 外部变量和本地变量声明 **************/
+   4          extern u8 LED8[8]; //显示缓冲，在 LED8.c 中声明
+   5          bit F_T0=0; //1ms 中断软标志
+   6          bit F_KS=0;
+   7          bit F_incdec=0,F_stop=0; //运行参数，初始为增量计数器，不停止
+   8          u8 Count=0; //unsigned char 与 s8,u16 在 led8.h 中定义
+   9          u8 miao=0;
+  10          u8 fen=0;
+  11          u8 a=2;
+  12          /**************** T0 中断初始化函数 ******************/
+  13          void T0_Init()
+  14          {
+  15   1      #define MAIN_Fosc 22118400L //定义主时钟
+  16   1      #define Timer0_Reload (65536UL -(MAIN_Fosc / 1000))
+  17   1      AUXR = 0x80; //Timer0 set as 1T, 16 bits timer auto-reload,
+  18   1      TH0 = (u8)(Timer0_Reload / 256);
+  19   1      TL0 = (u8)(Timer0_Reload % 256);
+  20   1      ET0 = 1; //T0 interrupt enable
+  21   1      PT0 = 1; //设置 T0 我高优先级
+  22   1      TR0 = 1; //启动 T0
+  23   1      }
+  24          /**************** INT0/INT1 中断初始化函数 ******************/
+  25          void INT_Init()
+  26          {
+  27   1      IT0 = 1; //INT0 下降沿中断
+  28   1      IT1 = 1;
+  29   1      IE1 = 0; //外中断 1 标志位
+  30   1      IE0 = 0; //外中断 0 标志位
+  31   1      EX1 = 1; //INT1 Enable
+  32   1      EX0 = 1; //INT0 Enable
+  33   1      EA = 1; //允许总中断
+  34   1      }
+  35          /********************** 端口初始化 ************************/
+  36          void Port_Init()
+  37          {
+  38   1      P0M1 = 0; P0M0 = 0; //设置为准双向口
+  39   1      P1M1 = 0; P1M0 = 0; //设置为准双向口
+  40   1      P2M1 = 0; P2M0 = 0; //设置为准双向口
+  41   1      P3M1 = 0; P3M0 = 0; //设置为准双向口
+  42   1      P4M1 = 0; P4M0 = 0; //设置为准双向口
+  43   1      P5M1 = 0; P5M0 = 0; //设置为准双向口
+  44   1      P6M1 = 0; P6M0 = 0; //设置为准双向口
+  45   1      P7M1 = 0; P7M0 = 0; //设置为准双向口
+  46   1      }
+  47          void delay_ms(u8 ms)
+  48          {
+  49   1      u16 i;
+  50   1      do{
+  51   2      i = MAIN_Fosc / 16000;
+  52   2      while(--i) ; //16T per loop
+  53   2      }while(--ms);
+  54   1      }
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 13:00:21 PAGE 2   
+
+  55          /********************* INT0 中断函数 *************************/
+  56          void INT0_int (void) interrupt 0 //进中断时已经清除标志
+  57          {
+  58   1      F_incdec^=1; //sw17 乒乓键，改变计数方向标志
+  59   1      delay_ms(20); //软件延时消抖动
+  60   1      }
+  61          /********************* INT1 中断函数 *************************/
+  62          void INT1_int (void) interrupt 2 //进中断时已经清除标志
+  63          {
+  64   1      F_stop^=1; //sw18 乒乓键，改变计数启停标志
+  65   1        if(F_incdec)
+  66   1          if(++a==8) a=2;
+  67   1      delay_ms(20); //软件延时消抖动
+  68   1      }
+  69          
+  70          /********************** T0 1ms中断函数 ************************/
+  71          void T0_int (void) interrupt 1
+  72          {
+  73   1        static u8 Count50=50;
+  74   1      
+  75   1          DisplayScan();  //1ms扫描显示一位
+  76   1        if(--Count50==0) {
+  77   2          F_KS=1;
+  78   2          Count50 = 50;
+  79   2        }  
+  80   1        F_T0 = 1; 
+  81   1      }        
+  82          extern u8 KeyCode;    //给用户使用的键码, 1~16有效 
+  83          void Key_Init(void);
+  84          void IO_KeyScan(void);
+  85          
+  86          /********************** 显示计数函数 ************************/
+  87          void DisplayCount(void)
+  88          {
+  89   1      LED8[2] = Count/10;
+  90   1      LED8[3] = Count%10+32;
+  91   1      LED8[4] = fen/10; 
+  92   1      LED8[5] = fen%10+32;
+  93   1      LED8[6] = miao/10; 
+  94   1      LED8[7] = miao%10;
+  95   1      }
+  96          /********************** 主函数 ************************/
+  97          void main(void)
+  98          {
+  99   1      u16 i=0;
+ 100   1      Port_Init(); //初始化
+ 101   1      T0_Init();
+ 102   1      INT_Init();
+ 103   1      for(i=0; i<8; i++) LED8[i] = DIS_BLACK; //上电消隐
+ 104   1      while(1) {
+ 105   2      if(F_T0) { //1ms 到
+ 106   3      F_T0 = 0;
+ 107   3      if(!F_incdec){
+ 108   4        
+ 109   4        if(++i >= 1000){//1s到
+ 110   5          i=0;
+ 111   5          if(++miao==60){
+ 112   6            miao=0;
+ 113   6            if(++fen==60){
+ 114   7              fen=0;
+ 115   7              if(++Count==24) Count=0;
+ 116   7              }
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 13:00:21 PAGE 3   
+
+ 117   6            }
+ 118   5          }
+ 119   4        DisplayCount();
+ 120   4        F_KS=0;
+ 121   4        }
+ 122   3      else{
+ 123   4        if(++i<=500)LED8[a]=0x10;
+ 124   4        else if(i<=1000)DisplayCount();//实现闪烁
+ 125   4        else i=0;
+ 126   4        if(F_KS) {          //50ms，扫描键盘
+ 127   5            IO_KeyScan();
+ 128   5            F_KS=0;
+ 129   5          }
+ 130   4        if(KeyCode > 0&&KeyCode<=10){
+ 131   5          switch(a){
+ 132   6               case 2: if(Count%10+(KeyCode-1)*10<24) Count=Count%10+(KeyCode-1)*10;break;
+ 133   6               case 3: if(Count/10*10+(KeyCode-1)<24) Count=Count/10*10+(KeyCode-1);break;
+ 134   6               case 4: if(fen%10+(KeyCode-1)*10<60) fen=fen%10+(KeyCode-1)*10;break;
+ 135   6               case 5: if(fen/10*10+(KeyCode-1)<60)fen=fen/10*10+(KeyCode-1);break;
+ 136   6               case 6: if(miao%10+(KeyCode-1)*10<60) miao=miao%10+(KeyCode-1)*10;break;;break;
+ 137   6               case 7: if(miao/10*10+(KeyCode-1)<60) miao=miao/10*10+(KeyCode-1);break;;break;
+ 138   6               }
+ 139   5          KeyCode=0;    
+ 140   5          }
+ 141   4      }
+ 142   3      }
+ 143   2      }
+ 144   1      }
+ 145                      
+ 146                    
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    858    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      5       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      4    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

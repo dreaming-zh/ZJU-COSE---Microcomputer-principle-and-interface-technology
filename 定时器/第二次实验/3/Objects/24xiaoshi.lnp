@@ -1,0 +1,5 @@
+".\Objects\STARTUP.obj",
+".\Objects\LED8.obj",
+".\Objects\24xiaoshi.obj" 
+TO ".\Objects\24xiaoshi" 
+PRINT(".\Listings\24xiaoshi.m51") RAMSIZE(256) 

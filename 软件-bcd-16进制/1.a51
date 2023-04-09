@@ -1,0 +1,25 @@
+     ORG 0000H
+ 	 MOV R7,#8
+	 MOV R0,#20H
+ 	 MOV R1,#30H
+	 MOV 20H,#37H
+	 
+LOOP:MOV A,@R0
+     LCALL TF
+	 INC R1
+	 INC R0
+	 DJNZ R7,LOOP
+	 SJMP $
+
+TF:  ANL A,#0FH
+     MOV R2,A
+	 MOV A,@R0
+	 ANL A,#0F0H
+	 SWAP A
+	 MOV B,#10
+	 MUL AB
+	 ADD A,R2
+	 MOV @R1,A
+	 RET
+
+	 END

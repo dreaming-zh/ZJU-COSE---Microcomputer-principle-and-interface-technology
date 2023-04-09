@@ -1,0 +1,104 @@
+C51 COMPILER V9.60.0.0   KEY16                                                             05/26/2022 23:17:14 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE KEY16
+OBJECT MODULE PLACED IN .\Objects\key16.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE key16.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\key16.
+                    -lst) TABS(2) OBJECT(.\Objects\key16.obj)
+
+line level    source
+
+   1          /*************  本程序功能说明  **************
+   2          翻转法获取键码，存放在KeyCode中
+   3          ******************************************/
+   4          #include <stc15.h>
+   5          #include "led8.h"
+   6          
+   7          u8 KeyCode;    //给用户使用的键码, 1~16有效
+   8          u8 IO_KeyState, IO_KeyState1, IO_KeyHoldCnt;    //行列键盘变量
+   9          
+  10          /**********************************************/
+  11          void Key_Init(void)
+  12          {
+  13   1          KeyCode = 0;    //给用户使用的键码, 1~16有效
+  14   1      
+  15   1          IO_KeyState = 0;
+  16   1          IO_KeyState1 = 0;
+  17   1          IO_KeyHoldCnt = 0;
+  18   1      }
+  19          
+  20          /*****************************************************
+  21              行列键扫描程序
+  22              使用XY查找4x4键的方法，只能单键，速度快
+  23          
+  24             Y     P00      P01      P02      P03
+  25                    |        |        |        |
+  26          X         |        |        |        |
+  27          P04 ---- K00 ---- K01 ---- K02 ---- K03 ----
+  28                    |        |        |        |
+  29          P05 ---- K04 ---- K05 ---- K06 ---- K07 ----
+  30                    |        |        |        |
+  31          P06 ---- K08 ---- K09 ---- K10 ---- K11 ----
+  32                    |        |        |        |
+  33          P07 ---- K12 ---- K13 ---- K14 ---- K15 ----
+  34                    |        |        |        |
+  35          ******************************************************/
+  36          u8 code T_KeyTable[16] = {0,1,2,0,3,0,0,0,4,0,0,0,0,0,0,0};
+  37          void    IO_KeyScan(void)    //50ms call
+  38          {
+  39   1          u8  i,j;
+  40   1      
+  41   1          j = IO_KeyState1;   //保存上一次状态
+  42   1      
+  43   1          P0 = 0xf0;  //Y低，读X
+  44   1          for(i=0;i<60;i++);
+  45   1          IO_KeyState1 = P0 & 0xf0;
+  46   1      
+  47   1          P0 = 0x0f;  //X低，读Y
+  48   1          for(i=0;i<60;i++);
+  49   1          IO_KeyState1 |= (P0 & 0x0f);
+  50   1          IO_KeyState1 ^= 0xff;   //取反
+  51   1          
+  52   1          if(j == IO_KeyState1)   //连续两次读相等
+  53   1          {
+  54   2              j = IO_KeyState;
+C51 COMPILER V9.60.0.0   KEY16                                                             05/26/2022 23:17:14 PAGE 2   
+
+  55   2              IO_KeyState = IO_KeyState1;
+  56   2              if(IO_KeyState != 0)    //有键按下
+  57   2              {
+  58   3                  F0 = 0;
+  59   3                  if(j == 0)  F0 = 1; //第一次按下
+  60   3                  else if(j == IO_KeyState)
+  61   3                  {
+  62   4                      if(++IO_KeyHoldCnt >= 20)   //1秒后重键
+  63   4                      {
+  64   5                          IO_KeyHoldCnt = 18;
+  65   5                          F0 = 1;
+  66   5                      }
+  67   4                  }
+  68   3                  if(F0)
+  69   3                  {
+  70   4                      j = T_KeyTable[IO_KeyState >> 4];                //有键
+  71   4                      if((j != 0) && (T_KeyTable[IO_KeyState& 0x0f] != 0)) 
+  72   4                          KeyCode = (j - 1) * 4 + T_KeyTable[IO_KeyState & 0x0f];    //计算键码
+  73   4                  }
+  74   3              }
+  75   2              else    IO_KeyHoldCnt = 0;
+  76   2          }
+  77   1          P0 = 0xff;
+  78   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    151    ----
+   CONSTANT SIZE    =     16    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      4    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

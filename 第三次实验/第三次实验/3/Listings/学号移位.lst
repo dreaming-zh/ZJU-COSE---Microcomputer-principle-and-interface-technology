@@ -1,0 +1,174 @@
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 12:34:24 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE ________
+OBJECT MODULE PLACED IN .\Objects\学号移位.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE 学号移位.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\
+                    -学号移位.lst) TABS(2) OBJECT(.\Objects\学号移位.obj)
+
+line level    source
+
+   1          #include <stc15.h>
+   2          #include <intrins.h>
+   3          #include <string.h>
+   4          #include "led8.h"
+   5          
+   6          #define StrLen strlen(disp_string)
+   7          
+   8          /*************  外部变量和本地变量声明    **************/  
+   9          extern u8  LED8[8];         //显示缓冲
+  10          
+  11          bit F_T0=0;             //1ms中断软标志
+  12          bit F_L=0, F_R=0;       //F_L,F_R左右键标记 
+  13          u8  disp_index=0, F_Dir=1;  //F_Dir方向标记，0左移 1 不动 2右移
+  14          
+  15          u8 code disp_string[]="3200104869 ";
+  16          
+  17          /**************** T0中断初始化函数 ******************/
+  18          void T0_Init()
+  19          {
+  20   1        #define     MAIN_Fosc       22118400L   //定义主时钟
+  21   1        #define     Timer0_Reload   (65536UL -(MAIN_Fosc / 1000))       //Timer 0 中断频率, 1000次/秒
+  22   1      
+  23   1          AUXR = 0x80;    //Timer0 set as 1T, 16 bits timer auto-reload, 
+  24   1          TH0 = (u8)(Timer0_Reload / 256);
+  25   1          TL0 = (u8)(Timer0_Reload % 256);
+  26   1        ET0 = 1;    //Timer0 interrupt enable
+  27   1        PT0 = 1;
+  28   1          TR0 = 1;    //Tiner0 run
+  29   1      }    
+  30          
+  31          /**************** INT0/INT1中断初始化函数 ******************/
+  32          void INT_Init()
+  33          {
+  34   1        IT0 = 1;    //INT0 下降沿中断        
+  35   1        IT1 = 1;    //INT1 下降沿中断
+  36   1        IE1  = 0;   //外中断1标志位
+  37   1        IE0  = 0;   //外中断0标志位
+  38   1      
+  39   1        EX1 = 1;    //INT1 Enable
+  40   1        EX0 = 1;    //INT0 Enable           
+  41   1        EA = 1;     //允许总中断
+  42   1      } 
+  43          
+  44          /********************** 端口初始化 ************************/
+  45          void Port_Init()
+  46          {
+  47   1          P0M1 = 0;   P0M0 = 0;   //设置为准双向口
+  48   1          P1M1 = 0;   P1M0 = 0;   //设置为准双向口
+  49   1          P2M1 = 0;   P2M0 = 0;   //设置为准双向口
+  50   1          P3M1 = 0;   P3M0 = 0;   //设置为准双向口
+  51   1          P4M1 = 0;   P4M0 = 0;   //设置为准双向口
+  52   1          P5M1 = 0;   P5M0 = 0;   //设置为准双向口
+  53   1          P6M1 = 0;   P6M0 = 0;   //设置为准双向口
+  54   1          P7M1 = 0;   P7M0 = 0;   //设置为准双向口
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 12:34:24 PAGE 2   
+
+  55   1      }
+  56          
+  57          void Delay20ms()    //@22.1184MHz
+  58          {
+  59   1        unsigned char i, j, k;
+  60   1      
+  61   1        _nop_(); _nop_();
+  62   1        i = 2;
+  63   1        j = 175;
+  64   1        k = 75;
+  65   1        do  {  
+  66   2          do  {
+  67   3            while (--k);
+  68   3          } while (--j);
+  69   2        } while (--i);
+  70   1      }
+  71          
+  72          /********************* INT0中断函数 *************************/
+  73          void INT0_int (void) interrupt 0      //进中断时已经清除标志
+  74          {
+  75   1          F_L^=1; //乒乓键
+  76   1        Delay20ms();
+  77   1      }
+  78          
+  79          /********************* INT1中断函数 *************************/
+  80          void INT1_int (void) interrupt 2      //进中断时已经清除标志
+  81          {
+  82   1          F_R^=1;   //乒乓键
+  83   1        Delay20ms(); //软件延时消抖动
+  84   1      }
+  85          
+  86          /********************** T0 1ms中断函数 ************************/
+  87          void T0_int (void) interrupt 1
+  88          {
+  89   1          DisplayScan();  //1ms扫描显示一位
+  90   1          F_T0 = 1;      //1ms标志    
+  91   1      }        
+  92          
+  93          u8 ASC2num(u8 asc)
+  94          {
+  95   1        if(asc<='9'&&asc>='0')
+  96   1          return asc-'0';
+  97   1        else return DIS_BLACK;
+  98   1      }
+  99          
+ 100          /********************** 显示数串函数 ************************/
+ 101          void ReflashDisp(void)
+ 102          {
+ 103   1          u8 i;
+ 104   1      
+ 105   1        for(i=0;i<8;i++)
+ 106   1          LED8[i] = ASC2num(disp_string[(disp_index+i)%StrLen]);
+ 107   1      }  
+ 108          
+ 109          /********************** 主函数 ************************/
+ 110          void main(void)
+ 111          {
+ 112   1        int i;
+ 113   1      
+ 114   1        Port_Init();
+ 115   1        T0_Init();
+ 116   1        INT_Init();    
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 12:34:24 PAGE 3   
+
+ 117   1         
+ 118   1          ReflashDisp();    //显示学号
+ 119   1          while(1) {
+ 120   2          if(F_L) {
+ 121   3            switch(F_Dir) {
+ 122   4              case 0: F_Dir=1;break;
+ 123   4              case 1: F_Dir=0; break;
+ 124   4              case 2: F_Dir=0;break;
+ 125   4            }
+ 126   3            F_L=0;
+ 127   3          }
+ 128   2          if(F_R) {
+ 129   3            switch(F_Dir) {
+ 130   4              case 0: F_Dir=2; break;
+ 131   4              case 1: F_Dir=2; break;
+ 132   4              case 2: F_Dir=1;break;
+ 133   4            }
+ 134   3            F_R=0;
+ 135   3          }
+ 136   2       
+ 137   2          if(F_T0) {
+ 138   3             F_T0=0;
+ 139   3            if(++i >= 1000) {  //1秒到                      
+ 140   4              i=0;
+ 141   4              disp_index=(disp_index-F_Dir+1+StrLen)%StrLen;
+ 142   4              ReflashDisp();   
+ 143   4            }
+ 144   3          }
+ 145   2          }
+ 146   1      } 
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    442    ----
+   CONSTANT SIZE    =     12    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

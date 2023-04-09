@@ -1,0 +1,175 @@
+/*************  本程序功能说明  **************
+ * 显示效果为: 手机号码循环移位
+ * 独立键盘，按SW17左移，按SW18右移
+ ******************************************/
+
+#include <stc15.h>
+#include <intrins.h>
+#include <string.h>
+#include "led8.h"
+#include "gdef.h"
+
+#define StrLen strlen( disp_string )
+
+/*************  外部变量和本地变量声明    **************/
+extern u8 LED8[8];                      /* 显示缓冲 */
+
+bit	F_T0		= 0;            /* 1ms中断软标志 */
+bit	F_L		= 0, F_R = 0;   /* F_L,F_R左右键标记 */
+u8	disp_index	= 0, F_Dir = 1; /* F_Dir方向标记，0左移 1 不动 2右移 */
+
+u8 code disp_string[] = "3200100637 ";
+
+/**************** T0中断初始化函数 ******************/
+void T0_Init()
+{
+	/* #define     MAIN_Fosc       22118400L   //定义主时钟 */
+#define     Timer0_Reload (65536UL - (MAIN_Fosc / 1000) )       /* Timer 0 中断频率, 1000次/秒 */
+
+	AUXR	= 0x80;                                         /* Timer0 set as 1T, 16 bits timer auto-reload, */
+	TH0	= (u8) (Timer0_Reload / 256);
+	TL0	= (u8) (Timer0_Reload % 256);
+	ET0	= 1;                                            /* Timer0 interrupt enable */
+	PT0	= 1;
+	TR0	= 1;                                            /* Tiner0 run */
+}
+
+
+/**************** INT0/INT1中断初始化函数 ******************/
+void INT_Init()
+{
+	IT0	= 1;                                            /* INT0 下降沿中断 */
+	IT1	= 1;                                            /* INT1 下降沿中断 */
+	IE1	= 0;                                            /* 外中断1标志位 */
+	IE0	= 0;                                            /* 外中断0标志位 */
+
+	EX1	= 1;                                            /* INT1 Enable */
+	EX0	= 1;                                            /* INT0 Enable */
+	EA	= 1;                                            /* 允许总中断 */
+}
+
+
+/********************** 端口初始化 ************************/
+void Port_Init()
+{
+	P0M1	= 0;   P0M0 = 0;                                /* 设置为准双向口 */
+	P1M1	= 0;   P1M0 = 0;                                /* 设置为准双向口 */
+	P2M1	= 0;   P2M0 = 0;                                /* 设置为准双向口 */
+	P3M1	= 0;   P3M0 = 0;                                /* 设置为准双向口 */
+	P4M1	= 0;   P4M0 = 0;                                /* 设置为准双向口 */
+	P5M1	= 0;   P5M0 = 0;                                /* 设置为准双向口 */
+	P6M1	= 0;   P6M0 = 0;                                /* 设置为准双向口 */
+	P7M1	= 0;   P7M0 = 0;                                /* 设置为准双向口 */
+}
+
+
+void Delay20ms()                                                /* @22.1184MHz */
+{
+	unsigned char i, j, k;
+
+	_nop_(); _nop_();
+	i	= 2;
+	j	= 175;
+	k	= 75;
+	do
+	{
+		do
+		{
+			while ( --k )
+				;
+		}
+		while ( --j );
+	}
+	while ( --i );
+}
+
+
+/********************* INT0中断函数 *************************/
+void INT0_int( void ) interrupt 0       /* 进中断时已经清除标志 */
+{
+	F_L ^= 1;                       /* 乒乓键 */
+	Delay20ms();
+}
+
+
+/********************* INT1中断函数 *************************/
+void INT1_int( void ) interrupt 2       /* 进中断时已经清除标志 */
+{
+	F_R ^= 1;                       /* 乒乓键 */
+	Delay20ms();                    /* 软件延时消抖动 */
+}
+
+
+/********************** T0 1ms中断函数 ************************/
+void T0_int( void ) interrupt 1
+{
+	DisplayScan();                  /* 1ms扫描显示一位 */
+	F_T0 = 1;                       /* 1ms标志 */
+}
+
+
+u8 ASC2num( u8 asc )
+{
+	if ( asc <= '9' && asc >= '0' )
+		return(asc - '0');
+	else return(DIS_BLACK);
+}
+
+
+/********************** 显示数串函数 ************************/
+void ReflashDisp( void )
+{
+	u8 i;
+
+	for ( i = 0; i < 8; i++ )
+		LED8[i] = ASC2num( disp_string[(disp_index + i) % StrLen] );
+}
+
+
+/********************** 主函数 ************************/
+void main( void )
+{
+	int i;
+
+	Port_Init();
+	T0_Init();
+	INT_Init();
+
+	ReflashDisp(); /* 显示手机号 */
+	while ( 1 )
+	{
+		if ( F_L )
+		{
+			switch ( F_Dir )
+			{
+			case 0: F_Dir	= 1; break;
+			case 1: F_Dir	= 0; break;
+			case 2: F_Dir	= 0; break;
+			}
+			F_L = 0;
+		}
+		if ( F_R )
+		{
+			switch ( F_Dir )
+			{
+			case 0: F_Dir	= 2; break;
+			case 1: F_Dir	= 2; break;
+			case 2: F_Dir	= 0; break;
+			}
+			F_R = 0;
+		}
+
+		if ( F_T0 )
+		{
+			F_T0 = 0;
+			if ( ++i >= 1000 ) /* 1秒到 */
+			{
+				i		= 0;
+				disp_index	= (disp_index - F_Dir + 1 + StrLen) % StrLen;
+				ReflashDisp();
+			}
+		}
+	}
+}
+
+

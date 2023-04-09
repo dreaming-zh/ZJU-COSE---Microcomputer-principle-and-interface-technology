@@ -1,0 +1,242 @@
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 13:55:52 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE ________
+OBJECT MODULE PLACED IN .\Objects\时钟信号.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE 时钟信号.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\
+                    -时钟信号.lst) TABS(2) OBJECT(.\Objects\时钟信号.obj)
+
+line level    source
+
+   1          #include <stc15.h>
+   2          #include <stdio.h>
+   3          #include <string.h>
+   4          #include "gdef.h"
+   5          #include "led8.h"
+   6          #include "serial.h"
+   7          
+   8          /*************  外部变量和本地变量声明    **************/  
+   9          extern u8  LED8[8];         //显示缓冲
+  10          bit F_500=0;    //500ms中断软标志
+  11          
+  12          
+  13          /**************** T0定时器初始化函数 ******************/
+  14          void T0_Init()
+  15          {
+  16   1        #define     Timer_Reload   (65536UL -(MAIN_Fosc / 1000))       //Timer0 中断频率, 1000次/秒
+  17   1      
+  18   1          AUXR = 0x80;    //Timer0 set as 1T, 16 bits timer auto-reload
+  19   1          TH0 = (u8)(Timer_Reload / 256);
+  20   1          TL0 = (u8)(Timer_Reload % 256);
+  21   1          TR0 = 1;    //Timer0 run
+  22   1      }   
+  23          
+  24          /**************** 中断初始化函数 ******************/
+  25          void INT_Init()
+  26          {
+  27   1        ET0 = 1;    //Timer0 interrupt enable
+  28   1        PT0 = 1;
+  29   1        ET1 = 0;  //Tim1仅当作波特率发生器
+  30   1          ES = 1;   
+  31   1        EA = 1;     //允许总中断
+  32   1      }
+  33          
+  34          /********************** 端口初始化 ************************/
+  35          void Port_Init()
+  36          {
+  37   1          P0M1 = 0;   P0M0 = 0;   //设置为准双向口
+  38   1          P1M1 = 0;   P1M0 = 0;   //设置为准双向口
+  39   1          P2M1 = 0;   P2M0 = 0;   //设置为准双向口
+  40   1          P3M1 = 0;   P3M0 = 0;   //设置为准双向口
+  41   1          P4M1 = 0;   P4M0 = 0;   //设置为准双向口
+  42   1          P5M1 = 0;   P5M0 = 0;   //设置为准双向口
+  43   1          P6M1 = 0;   P6M0 = 0;   //设置为准双向口
+  44   1          P7M1 = 0;   P7M0 = 0;   //设置为准双向口
+  45   1      }
+  46          
+  47          /********************** T0 1ms中断函数 ************************/
+  48          void T0_int (void) interrupt 1
+  49          {
+  50   1        static u16 Count500=500;
+  51   1      
+  52   1          DisplayScan();  //1ms扫描显示一位
+  53   1        if(--Count500==0) {
+  54   2          F_500=1;
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 13:55:52 PAGE 2   
+
+  55   2          Count500=500;
+  56   2        }
+  57   1      }        
+  58          
+  59          u8  hour,minute,second; //RTC变量
+  60          /********************** RTC演示函数 ************************/
+  61          void    RTC(void)
+  62          {
+  63   1          if(++second >= 60)
+  64   1          {
+  65   2              second = 0;
+  66   2              if(++minute >= 60)
+  67   2              {
+  68   3                  minute = 0;
+  69   3                  if(++hour >= 24)    hour = 0;
+  70   3              }
+  71   2          }
+  72   1      }
+  73          
+  74          u8 code T_ModiTable[6]={0,1,3,4,6,7};
+  75          /********************** 显示时钟函数 ************************/
+  76          u8 GetChar(u8 position)
+  77          {
+  78   1        switch(position) {
+  79   2          case 0: return hour / 10; 
+  80   2          case 1: return hour % 10;  
+  81   2          case 2: return minute / 10;
+  82   2          case 3: return minute % 10;
+  83   2          case 4: return second / 10;
+  84   2          case 5: return second % 10;
+  85   2          default:return DIS_BLACK;
+  86   2        }   
+  87   1      }   
+  88          
+  89          void    DisplayLED(u8 position, bit blit)
+  90          {
+  91   1        LED8[T_ModiTable[position]]=blit?GetChar(position):DIS_BLACK;
+  92   1      }
+  93          
+  94          void    DisplayRTC(void)
+  95          {
+  96   1        u8 i;
+  97   1        for(i=0;i<6;i++)
+  98   1          DisplayLED(i,1);
+  99   1        LED8[2] = DIS_DASH; //点亮
+ 100   1        LED8[5] = DIS_DASH;
+ 101   1      }
+ 102          
+ 103          void FlashRTC(void)
+ 104          { 
+ 105   1        LED8[2] = DIS_BLACK; //熄灭
+ 106   1        LED8[5] = DIS_BLACK;     
+ 107   1      }
+ 108          
+ 109          void RunRTC(void)
+ 110          {
+ 111   1        static bit onesecond=0;
+ 112   1      
+ 113   1        if(F_500) {  //500毫秒到                      
+ 114   2          F_500=0;
+ 115   2          if(!onesecond) {
+ 116   3            FlashRTC();   //时间中间横杠秒闪
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 13:55:52 PAGE 3   
+
+ 117   3            onesecond^=1;
+ 118   3          } else {
+ 119   3              RTC();      //2个500ms,代表1s到
+ 120   3            DisplayRTC();
+ 121   3              onesecond=0;
+ 122   3            printf("当前时间：%bd:%bd:%bd\n",hour,minute,second);
+ 123   3          }
+ 124   2        }
+ 125   1      }
+ 126          
+ 127          enum { HH,MM,SS };
+ 128          bit interpret(u8 *hour,u8 *minute,u8 *second)
+ 129          {
+ 130   1        u8 xdata string[20],xdata *sptr,hhmmss=HH, tmpH, tmpM, tmpS;  
+ 131   1        u16 dtype,dvalue,dlenth;
+ 132   1        bit valid=0,endline;
+ 133   1      
+ 134   1        while(RXready()) {
+ 135   2          scanf("%s",string);     
+ 136   2          if(strstr(string,"设置时间")) valid=1; break;
+ 137   2        }   
+ 138   1        if(!valid) return 0;   
+ 139   1        
+ 140   1        while(RXready()) {
+ 141   2          scanf("%s",string); sptr=string;
+ 142   2            for(endline=0;!endline;) {
+ 143   3                dtype=scanf(sptr,"%d%n",&dvalue,&dlenth);
+ 144   3            switch(dtype) {
+ 145   4                case 0: sptr++; break;
+ 146   4              case 1: sptr+=dlenth;
+ 147   4                  switch(hhmmss) {
+ 148   5                    case HH:if(HH<24) tmpH=dvalue; else valid=0; break;
+ 149   5                    case MM:if(MM<60) tmpM=dvalue; else valid=0; break;
+ 150   5                    case SS:if(SS<60) tmpS=dvalue; else valid=0; break;
+ 151   5                    default: break;
+ 152   5                  }
+ 153   4                  hhmmss++; 
+ 154   4                  break; 
+ 155   4              default:endline=1;
+ 156   4                }
+ 157   3          }
+ 158   2          }
+ 159   1        if(valid) 
+ 160   1          *hour=tmpH, *minute=tmpM, *second=tmpS;
+ 161   1        return valid;
+ 162   1      }  
+ 163          //  valid=1;
+ 164          //  for(;!endline;) {
+ 165          //        dtype=scanf("%d%n",&dvalue,&dlenth);
+ 166          //    switch(dtype) {
+ 167          //        case 0: sptr++; break;
+ 168          //      case 1: printf("%d\n",dvalue);            
+ 169          //          sptr+=dlenth;
+ 170          //          switch(hhmmss) {
+ 171          //            case HH:if(HH<24) *hour=dvalue; else valid=0; break;
+ 172          //            case MM:if(MM<60) *minute=dvalue; else valid=0; break;
+ 173          //            case SS:if(SS<60) *second=dvalue; else valid=0; break;;
+ 174          //          }
+ 175          //          hhmmss++; 
+ 176          //          break; 
+ 177          //      default:endline=1;
+ 178          //        }
+C51 COMPILER V9.59.0.0   ________                                                          06/05/2022 13:55:52 PAGE 4   
+
+ 179          //    }
+ 180            
+ 181          void ModifyRTC(void)
+ 182          {
+ 183   1        if(!RXready()) return;  
+ 184   1        if(!interpret(&hour,&minute,&second)) {  
+ 185   2          printf("输入格式应为\"设置时间：HH:MM:SS\"\n");
+ 186   2          printf("注意\"设置时间\"与时间数据之间需要有间隔符\n"); 
+ 187   2          return;
+ 188   2        }   
+ 189   1        F_500=0;    //防止修改后秒马上变化
+ 190   1        DisplayRTC();
+ 191   1      }
+ 192          
+ 193          
+ 194          /********************** 主函数 ************************/
+ 195          void main(void)
+ 196          {
+ 197   1        Port_Init();
+ 198   1        T0_Init();
+ 199   1        INT_Init();
+ 200   1        Uart_Init(38400);
+ 201   1      
+ 202   1          hour   = 0;    //初始化时间值
+ 203   1          minute = 0;
+ 204   1          second = 0;
+ 205   1          DisplayRTC();  
+ 206   1      
+ 207   1          while(1) {
+ 208   2          RunRTC();
+ 209   2          ModifyRTC();
+ 210   2        }
+ 211   1      } 
+ 212          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    715    ----
+   CONSTANT SIZE    =    121    ----
+   XDATA SIZE       =   ----      26
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      5      13
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2       3
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

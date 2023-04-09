@@ -1,0 +1,7 @@
+".\Objects\STARTUP.obj",
+".\Objects\LED8.obj",
+".\Objects\NTC.obj",
+".\Objects\serial.obj",
+".\Objects\电压温度.obj" 
+TO ".\Objects\电压温度" 
+PRINT(".\Listings\电压温度.m51") RAMSIZE(256) 

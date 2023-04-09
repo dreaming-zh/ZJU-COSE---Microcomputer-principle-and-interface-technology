@@ -1,0 +1,171 @@
+C51 COMPILER V9.60.0.0   ________                                                          06/01/2022 16:38:55 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE ________
+OBJECT MODULE PLACED IN .\Objects\µçÑ¹ÎÂ¶È.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE µçÑ¹ÎÂ¶È.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\µçÑ
+                    -¹ÎÂ¶È.lst) TABS(2) OBJECT(.\Objects\µçÑ¹ÎÂ¶È.obj)
+
+line level    source
+
+   1          /*************  ±¾³ÌÐò¹¦ÄÜËµÃ÷  **************
+   2          ÏÔÊ¾Ð§¹ûÎª: ÊÖ»úºÅÂëÑ­»·ÒÆÎ»
+   3          ¶ÀÁ¢¼üÅÌ£¬°´SW17×óÒÆ£¬°´SW18ÓÒÒÆ
+   4          ******************************************/
+   5          #include <stc15.h>
+   6          #include <intrins.h>
+   7          #include <string.h>
+   8          #include <stdio.h>
+   9          #include "gdef.h"
+  10          #include "led8.h"
+  11          #include "adc.h"
+  12          #include "serial.h"
+  13          
+  14          #define StrLen strlen(disp_string)
+  15          
+  16          /*************  Íâ²¿±äÁ¿ºÍ±¾µØ±äÁ¿ÉùÃ÷    **************/  
+  17          extern u8  LED8[8];         //ÏÔÊ¾»º³å
+  18          
+  19          bit F_T0=0;     //1msÖÐ¶ÏÈí±êÖ¾
+  20          u8  disp_index=0, F_Dir=1;  //F_Dir·½Ïò±ê¼Ç£¬0×óÒÆ 1 ²»¶¯ 2ÓÒÒÆ
+  21          
+  22          /**************** T0¶¨Ê±Æ÷³õÊ¼»¯º¯Êý ******************/
+  23          void T0_Init()
+  24          {
+  25   1        #define     Timer_Reload   (65536UL -(MAIN_Fosc / 1000))       //Timer0 ÖÐ¶ÏÆµÂÊ, 1000´Î/Ãë
+  26   1      
+  27   1          AUXR = 0x80;    //Timer0 set as 1T, 16 bits timer auto-reload
+  28   1          TH0 = (u8)(Timer_Reload / 256);
+  29   1          TL0 = (u8)(Timer_Reload % 256);
+  30   1          TR0 = 1;    //Timer0 run
+  31   1      }   
+  32          
+  33          /**************** ÖÐ¶Ï³õÊ¼»¯º¯Êý ******************/
+  34          void INT_Init()
+  35          {
+  36   1        ET0 = 1;    //Timer0 interrupt enable
+  37   1        PT0 = 1;
+  38   1        ET1 = 0;  //Tim1½öµ±×÷²¨ÌØÂÊ·¢ÉúÆ÷
+  39   1          ES = 1;   
+  40   1        EA = 1;     //ÔÊÐí×ÜÖÐ¶Ï
+  41   1      } 
+  42          
+  43          /********************** ¶Ë¿Ú³õÊ¼»¯ ************************/
+  44          void Port_Init()
+  45          {
+  46   1          P0M1 = 0;   P0M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  47   1          P1M1 = 0;   P1M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  48   1          P2M1 = 0;   P2M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  49   1          P3M1 = 0;   P3M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  50   1          P4M1 = 0;   P4M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  51   1          P5M1 = 0;   P5M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  52   1          P6M1 = 0;   P6M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  53   1          P7M1 = 0;   P7M0 = 0;   //ÉèÖÃÎª×¼Ë«Ïò¿Ú
+  54   1      }
+C51 COMPILER V9.60.0.0   ________                                                          06/01/2022 16:38:55 PAGE 2   
+
+  55          
+  56          /********************** T0 1msÖÐ¶Ïº¯Êý ************************/
+  57          void T0_int (void) interrupt TIMER0_VECTOR
+  58          {
+  59   1          DisplayScan();  //1msÉ¨ÃèÏÔÊ¾Ò»Î»
+  60   1          F_T0 = 1;      //1ms±êÖ¾    
+  61   1      } 
+  62          
+  63          void DispClr()
+  64          { 
+  65   1        u8 i;
+  66   1      
+  67   1        for(i=0; i<8; i++)  LED8[i] = DIS_BLACK; //ÉÏµçÏûÒþ
+  68   1      }
+  69          
+  70          u16 DispVdd()
+  71          {
+  72   1        u8 i;
+  73   1        u16 j;
+  74   1      
+  75   1        for(j=0,i=0; i<16; i++)   j += Get_ADC10bitResult(8); //ÄÚ²¿»ù×¼ADC, P1ASF=0, ¶Á0Í¨µÀ
+  76   1          j = (u32)128000UL*16 / j;  // ADC = 1024 * Uref / Ux, Ôò Ux = 1024 * Uref / ADC = 1024 * 1.25 / ADC = 
+             -1280 / ADC
+  77   1      
+  78   1          LED8[0] = j / 100 + DIS_DOT;    //ÏÔÊ¾MCUµçÑ¹Öµ, ¼ÆËãÊ±·Å´óÁË100±¶, µçÑ¹ÓÐÁ½Î»Ð¡Êý.
+  79   1          LED8[1] = (j % 100) / 10;
+  80   1          LED8[2] = j % 10; 
+  81   1      
+  82   1        return j;
+  83   1      }    
+  84          
+  85          u16 DispNTC()
+  86          {
+  87   1        u8 i;
+  88   1        u16 j;
+  89   1      
+  90   1        for(j=0,i=0; i<4; i++) j += Get_ADC10bitResult(3);  //Í¨µÀ3£¬NTC  
+  91   1          j = get_temperature(j); //¼ÆËãÎÂ¶ÈÖµ
+  92   1      
+  93   1          if(j >= 400)    F0 = 0, j -= 400;       //ÎÂ¶È >= 0¶È
+  94   1          else            F0 = 1, j  = 400 - j;   //ÎÂ¶È <  0¶È
+  95   1          LED8[4] = j / 1000;     //ÏÔÊ¾ÎÂ¶ÈÖµ
+  96   1          LED8[5] = (j % 1000) / 100;
+  97   1          LED8[6] = (j % 100) / 10 + DIS_DOT;
+  98   1          LED8[7] = j % 10;
+  99   1      
+ 100   1          if(LED8[4] == 0)   //¿ÉÄÜÊÇ3Î»»òÕß2Î»ÎÂ¶È
+ 101   1          if(LED8[5] == 0)  {       
+ 102   2              LED8[4] = LED8[5] = DIS_BLACK;
+ 103   2            if(F0)  LED8[5] = DIS_;     //ÏÔÊ¾- 
+ 104   2          } else {
+ 105   2            LED8[4] = DIS_BLACK;
+ 106   2            if(F0)  LED8[4] = DIS_;     //ÏÔÊ¾-
+ 107   2          }
+ 108   1      
+ 109   1        return j;
+ 110   1      }   
+ 111          
+ 112          
+ 113          /********************** Ö÷º¯Êý ************************/
+ 114          void main(void)
+ 115          {
+C51 COMPILER V9.60.0.0   ________                                                          06/01/2022 16:38:55 PAGE 3   
+
+ 116   1        static u16 msecond=0;
+ 117   1        static bit NTC=0;
+ 118   1      
+ 119   1        Port_Init();
+ 120   1        T0_Init();
+ 121   1        INT_Init();    
+ 122   1        ADC_Init();
+ 123   1        Uart_Init(38400);
+ 124   1         
+ 125   1        DispClr();
+ 126   1          while(1) {
+ 127   2          if(F_T0) {  //1msµ½
+ 128   3            F_T0 = 0;
+ 129   3                  if(++msecond >= 500) {   //500ms²âÒ»¸öÊý¾Ý
+ 130   4              msecond = 0;  
+ 131   4              if(!NTC) {             
+ 132   5                printf("Vdd:%3.2f\t",DispVdd()/100.0);
+ 133   5                P1ASF = 0x01<<3;       //ÉèÖÃP1.3ÓÃÓÚADCÍ¨µÀ3£¬NTCÁ¬½Óµ½ADC3
+ 134   5              }  else {
+ 135   5                printf("NTC:%4.1f\n",DispNTC()/10.0);
+ 136   5                P1ASF = 0;        //×¼±¸P1ÓÃÓÚµÚ9Í¨µÀ²âÊÔÄÚ²¿BGV
+ 137   5              }
+ 138   4              NTC^=1;
+ 139   4                  }  
+ 140   3              }
+ 141   2          }
+ 142   1      } 
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    607    ----
+   CONSTANT SIZE    =     22    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      4       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

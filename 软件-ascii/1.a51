@@ -1,0 +1,26 @@
+     ORG 0000H
+     MOV R7,#8
+     MOV R0,#20H
+     MOV R1,#30H
+	 MOV 20H,#14H
+	 
+LOOP:MOV A,@R0
+     LCALL ASCII
+	 MOV @R1,A
+	 INC R1
+	 MOV A,@R0
+	 SWAP A
+	 LCALL ASCII
+	 MOV @R1,A
+	 INC R1
+	 INC R0
+	 DJNZ R7,LOOP
+	 SJMP $
+
+ASCII:ANL A,#0FH
+      CJNE A,#0AH,NEXT
+NEXT: JC LOOP1
+      ADD A,#07H		    
+LOOP1:ADD A,#30H
+      RET
+	  END

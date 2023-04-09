@@ -1,0 +1,62 @@
+C51 COMPILER V9.59.0.0   2                                                                 05/11/2022 18:50:16 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE 2
+OBJECT MODULE PLACED IN .\Objects\2.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE 2.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\2.lst) 
+                    -TABS(2) OBJECT(.\Objects\2.obj)
+
+line level    source
+
+   1          #include<STC15.H>
+   2          #define u8 unsigned char 
+   3          #define u16 unsigned 
+   4          #define MAIN_Fosc 22118400L //定义主时钟
+   5          
+   6          
+   7          void delay_ms(u8 ms)
+   8          {
+   9   1        u16 i;
+  10   1        do{
+  11   2          i = MAIN_Fosc / 16000;
+  12   2          while(--i);
+  13   2        }while(--ms);
+  14   1      }
+  15          
+  16          void setLED(u8 i)
+  17          {
+  18   1        P17=P16=P47=P46=1;
+  19   1        switch(i){
+  20   2          case 0:P17 = 0;break;
+  21   2          case 1:P16 = 0;break;
+  22   2          case 2:P47 = 0;break;
+  23   2          case 3:P46 = 0;break; 
+  24   2        }
+  25   1        delay_ms(250);
+  26   1      }
+  27          
+  28          
+  29          void main(void)
+  30          {
+  31   1        u8 i;
+  32   1        
+  33   1        P1M1=0;P1M0=0;
+  34   1        P4M1=0;P4M0=0;
+  35   1        while (1)
+  36   1          for (i=0;i<4;i++)
+  37   1            setLED(i);
+  38   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     86    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

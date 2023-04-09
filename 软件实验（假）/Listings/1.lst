@@ -1,0 +1,73 @@
+A51 MACRO ASSEMBLER  1                                                                    04/27/2022 21:18:08 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\1.obj
+ASSEMBLER INVOKED BY: E:\Keil_v5\C51\BIN\A51.EXE 1.a51 INCDIR(E:\Keil_v5\Backup.001\C51\LIB) SET(SMALL) DEBUG PRINT(.\Li
+                      stings\1.lst) OBJECT(.\Objects\1.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;ÊìÏ¤¸øÄÚ²¿RAMºÍÍâ²¿RAM¸³ÖµµÄ³ÌÐò£»±àÐ´³ÌÐòÊµÏÖÄÚ²¿RAMÓëÍâ²¿RAMÖ®¼äÊ¾ÝCOPYµÄ³ÌÐò¡£
+                       2     ;ÓÃ²é±íÖ¸Áî£¬Éè¼ÆÒ»¸ö²é¡°0-20¡±Ö®¼äÊÖµÆ½·½µÄ³ÌÐò¡£
+                       3     
+                       4     
+                       5     ;MOV DPTR,#0100H
+                       6     ;MOVX A,@DPTR
+                       7     ;MOV @R1,A
+                       8     ;MOV 01H,@R1
+                       9     
+                      10     
+0000                  11     ORG 0000H
+0000 900200           12     SUB1:   MOV DPTR,#TABLE
+0003 7B12             13             MOV R3,#12H ;°ÑÒª¼ÆËãµÄ×Ô±äÁ¿ËÍÈë
+0005 EB               14             MOV A,R3
+0006 23               15             RL A
+0007 F5F0             16             MOV B,A
+0009 93               17             MOVC A,@A+DPTR
+000A FE               18             MOV R6,A
+000B E5F0             19             MOV A,B
+000D 04               20             INC A
+000E 93               21             MOVC A,@A+DPTR
+000F FF               22             MOV R7,A
+0010 80FE             23             SJMP $
+0200                  24     ORG     0200H
+0200 0000             25     TABLE: DW 0,1,4,9,16,25,36,49,64,81,100,121,144,169,196,225,256,289,324,400
+0202 0001                    
+0204 0004                    
+0206 0009                    
+0208 0010                    
+020A 0019                    
+020C 0024                    
+020E 0031                    
+0210 0040                    
+0212 0051                    
+0214 0064                    
+0216 0079                    
+0218 0090                    
+021A 00A9                    
+021C 00C4                    
+021E 00E1                    
+0220 0100                    
+0222 0121                    
+0224 0144                    
+0226 0190                    
+                      26     END
+                             
+A51 MACRO ASSEMBLER  1                                                                    04/27/2022 21:18:08 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+B. . . . . . . . .  D ADDR   00F0H   A   
+SUB1 . . . . . . .  C ADDR   0000H   A   
+TABLE. . . . . . .  C ADDR   0200H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

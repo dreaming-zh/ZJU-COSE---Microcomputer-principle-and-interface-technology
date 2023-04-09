@@ -1,0 +1,135 @@
+C51 COMPILER V9.60.0.0   24XIAOSHI                                                         05/19/2022 15:52:55 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE 24XIAOSHI
+OBJECT MODULE PLACED IN .\Objects\24xiaoshi.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE 24xiaoshi.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\24
+                    -xiaoshi.lst) TABS(2) OBJECT(.\Objects\24xiaoshi.obj)
+
+line level    source
+
+   1          #include <stc15.h>
+   2          #include "led8.h"
+   3          /************* 外部变量和本地变量声明 **************/
+   4          extern u8 LED8[8]; //显示缓冲，在 LED8.c 中声明
+   5          bit F_T0=0; //1ms 中断软标志
+   6          bit F_incdec=0,F_stop=0; //运行参数，初始为增量计数器，不停止
+   7          u8 Count=0; //unsigned char 与 s8,u16 在 led8.h 中定义
+   8          u8 miao=0;
+   9          u8 fen=0;
+  10          /**************** T0 中断初始化函数 ******************/
+  11          void T0_Init()
+  12          {
+  13   1      #define MAIN_Fosc 22118400L //定义主时钟
+  14   1      #define Timer0_Reload (65536UL -(MAIN_Fosc / 1000))
+  15   1      AUXR = 0x80; //Timer0 set as 1T, 16 bits timer auto-reload,
+  16   1      TH0 = (u8)(Timer0_Reload / 256);
+  17   1      TL0 = (u8)(Timer0_Reload % 256);
+  18   1      ET0 = 1; //T0 interrupt enable
+  19   1      PT0 = 1; //设置 T0 我高优先级
+  20   1      TR0 = 1; //启动 T0
+  21   1      }
+  22          /**************** INT0/INT1 中断初始化函数 ******************/
+  23          void INT_Init()
+  24          {
+  25   1      IT0 = 1; //INT0 下降沿中断
+  26   1        IE1 = 0; //外中断 1 标志位
+  27   1      IE0 = 0; //外中断 0 标志位
+  28   1      EX1 = 1; //INT1 Enable
+  29   1      EX0 = 1; //INT0 Enable
+  30   1      EA = 1; //允许总中断
+  31   1      }
+  32          /********************** 端口初始化 ************************/
+  33          void Port_Init()
+  34          {
+  35   1      P0M1 = 0; P0M0 = 0; //设置为准双向口
+  36   1      P1M1 = 0; P1M0 = 0; //设置为准双向口
+  37   1      P2M1 = 0; P2M0 = 0; //设置为准双向口
+  38   1      P3M1 = 0; P3M0 = 0; //设置为准双向口
+  39   1      P4M1 = 0; P4M0 = 0; //设置为准双向口
+  40   1      P5M1 = 0; P5M0 = 0; //设置为准双向口
+  41   1      P6M1 = 0; P6M0 = 0; //设置为准双向口
+  42   1      P7M1 = 0; P7M0 = 0; //设置为准双向口
+  43   1      }
+  44          void delay_ms(u8 ms)
+  45          {
+  46   1      u16 i;
+  47   1      do{
+  48   2      i = MAIN_Fosc / 16000;
+  49   2      while(--i) ; //16T per loop
+  50   2      }while(--ms);
+  51   1      }
+  52          /********************* INT0 中断函数 *************************/
+  53          void INT0_int (void) interrupt 0 //进中断时已经清除标志
+  54          {
+C51 COMPILER V9.60.0.0   24XIAOSHI                                                         05/19/2022 15:52:55 PAGE 2   
+
+  55   1      F_incdec^=1; //sw17 乒乓键，改变计数方向标志
+  56   1      delay_ms(20); //软件延时消抖动
+  57   1      }
+  58          /********************* INT1 中断函数 *************************/
+  59          void INT1_int (void) interrupt 2 //进中断时已经清除标志
+  60          {
+  61   1      F_stop^=1; //sw18 乒乓键，改变计数启停标志
+  62   1      delay_ms(20); //软件延时消抖动
+  63   1      }
+  64          /********************** T0 1ms 中断函数 ************************/
+  65          void T0_int (void) interrupt 1
+  66          {
+  67   1      DisplayScan(); //1ms 扫描显示一位
+  68   1      F_T0 = 1; //1ms 时间到标志
+  69   1      }
+  70          /********************** 显示计数函数 ************************/
+  71          void DisplayCount(void)
+  72          {
+  73   1      LED8[2] = Count/10;
+  74   1      LED8[3] = Count%10+32;
+  75   1      LED8[4] = fen/10; 
+  76   1      LED8[5] = fen%10+32;
+  77   1      LED8[6] = miao/10; 
+  78   1      LED8[7] = miao%10;
+  79   1      }
+  80          /********************** 主函数 ************************/
+  81          void main(void)
+  82          {
+  83   1      u16 i=0;
+  84   1      Port_Init(); //初始化
+  85   1      T0_Init();
+  86   1      INT_Init();
+  87   1      for(i=0; i<8; i++) LED8[i] = DIS_BLACK; //上电消隐
+  88   1      while(1) {
+  89   2      if(F_T0) { //1ms 到
+  90   3      F_T0 = 0;
+  91   3      if(!F_stop)
+  92   3      if(++i >= 1000) { //1 秒到
+  93   4      i=0;
+  94   4      if(!F_incdec){ //根据计数方向更新计数
+  95   5      if(++miao==60) {miao=0;fen++;if(++fen==60){fen=0;Count++;}}
+  96   5      } else {
+  97   5      if(miao==0&&fen==0&&Count==0) {Count=23;fen=59;miao=59;}
+  98   5      else if(miao==0&&fen==0){Count--;fen=59;miao=59;}
+  99   5      else if(miao==0){fen--;miao=59;}
+ 100   5      else miao--;
+ 101   5      }
+ 102   4      
+ 103   4      }
+ 104   3      DisplayCount(); //更新显示缓冲区
+ 105   3      }
+ 106   2      }
+ 107   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    398    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3    ----
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V9.60.0.0   24XIAOSHI                                                         05/19/2022 15:52:55 PAGE 3   
+
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

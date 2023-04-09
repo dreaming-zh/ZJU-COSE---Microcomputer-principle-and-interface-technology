@@ -1,0 +1,27 @@
+;熟悉给内部RAM和外部RAM赋值的程序；编写程序实现内部RAM与外部RAM之间数据COPY的程序。
+;用查表指令，设计一个查“0-20”之间数值平方的程序。
+
+
+;MOV DPTR,#0100H
+;MOVX A,@DPTR
+;MOV @R1,A
+;MOV 01H,@R1
+
+
+ORG 0000H
+SUB1:	MOV DPTR,#TABLE
+	MOV R3,#12H ;把要计算的自变量送入
+	MOV A,R3
+	RL A
+	MOV B,A
+	MOVC A,@A+DPTR
+	MOV R6,A
+	MOV A,B
+	INC A
+	MOVC A,@A+DPTR
+	MOV R7,A
+	SJMP $
+ORG	0200H
+TABLE: DW 0,1,4,9,16,25,36,49,64,81,100,121,144,169,196,225,256,289,324,361,400
+END
+

@@ -1,0 +1,276 @@
+C51 COMPILER V9.57.0.0   MAIN                                                              06/05/2022 13:48:00 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: F:\Keil\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.ls
+                    -t) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          /*************  本程序功能说明  **************
+   2           * 显示效果为: 手机号码循环移位
+   3           * 独立键盘，按SW17左移，按SW18右移
+   4           ******************************************/
+   5          
+   6          #include <stc15.h>
+   7          #include <stdio.h>
+   8          #include <intrins.h>
+   9          #include <string.h>
+  10          #include "gdef.h"
+  11          #include "led8.h"
+  12          #include "serial.h"
+  13          
+  14          #define StrLen strlen( disp_string )
+  15          
+  16          /*************  外部变量和本地变量声明    **************/
+  17          extern u8 LED8[8];                      /* 显示缓冲 */
+  18          
+  19          bit F_T0 = 0;            /* 1ms中断软标志 */
+  20          bit F_L = 0, F_R = 0;   /* F_L,F_R左右键标记 */
+  21          u8  disp_index  = 0, F_Dir = 1; /* F_Dir方向标记，0-左移 1-不动 2-右移 */
+  22          
+  23          u8 code disp_string[] = "3200100353 ";
+  24          
+  25          u16 speed=500; //显示速度，单位ms，分为500 1000 2000三档
+  26          
+  27          /**************** T0中断初始化函数 ******************/
+  28          void T0_Init()
+  29          {
+  30   1        /* #define     MAIN_Fosc       22118400L   //定义主时钟 */
+  31   1      #define     Timer0_Reload (65536UL - (MAIN_Fosc / 1000) )       /* Timer 0 中断频率, 1000次/秒 */
+  32   1      
+  33   1        AUXR  = 0x80;                                         /* Timer0 set as 1T, 16 bits timer auto-reload, */
+  34   1        TH0 = (u8) (Timer0_Reload / 256);
+  35   1        TL0 = (u8) (Timer0_Reload % 256);
+  36   1        ET0 = 1;                                            /* Timer0 interrupt enable */
+  37   1        PT0 = 1;
+  38   1        TR0 = 1;                                            /* Tiner0 run */
+  39   1      }
+  40          
+  41          
+  42          /**************** INT0/INT1中断初始化函数 ******************/
+  43          void INT_Init()
+  44          {
+  45   1        IT0 = 1;                                            /* INT0 下降沿中断 */
+  46   1        IT1 = 1;                                            /* INT1 下降沿中断 */
+  47   1        IE1 = 0;                                            /* 外中断1标志位 */
+  48   1        IE0 = 0;                                            /* 外中断0标志位 */
+  49   1      
+  50   1        EX1 = 1;                                            /* INT1 Enable */
+  51   1        EX0 = 1;                                            /* INT0 Enable */
+  52   1        EA  = 1;                                            /* 允许总中断 */
+  53   1        ES = 1;  //重要！！！
+  54   1      }
+C51 COMPILER V9.57.0.0   MAIN                                                              06/05/2022 13:48:00 PAGE 2   
+
+  55          
+  56          
+  57          /********************** 端口初始化 ************************/
+  58          void Port_Init()
+  59          {
+  60   1        P0M1  = 0;   P0M0 = 0;                                /* 设置为准双向口 */
+  61   1        P1M1  = 0;   P1M0 = 0;                                /* 设置为准双向口 */
+  62   1        P2M1  = 0;   P2M0 = 0;                                /* 设置为准双向口 */
+  63   1        P3M1  = 0;   P3M0 = 0;                                /* 设置为准双向口 */
+  64   1        P4M1  = 0;   P4M0 = 0;                                /* 设置为准双向口 */
+  65   1        P5M1  = 0;   P5M0 = 0;                                /* 设置为准双向口 */
+  66   1        P6M1  = 0;   P6M0 = 0;                                /* 设置为准双向口 */
+  67   1        P7M1  = 0;   P7M0 = 0;                                /* 设置为准双向口 */
+  68   1      }
+  69          
+  70          
+  71          void Delay20ms()                                                /* @22.1184MHz */
+  72          {
+  73   1        unsigned char i, j, k;
+  74   1      
+  75   1        _nop_(); _nop_();
+  76   1        i = 2;
+  77   1        j = 175;
+  78   1        k = 75;
+  79   1        do
+  80   1        {
+  81   2          do
+  82   2          {
+  83   3            while ( --k )
+  84   3              ;
+  85   3          }
+  86   2          while ( --j );
+  87   2        }
+  88   1        while ( --i );
+  89   1      }
+  90          
+  91          
+  92          /********************* INT0中断函数 *************************/
+  93          void INT0_int( void ) interrupt 0       /* 进中断时已经清除标志 */
+  94          {
+  95   1        F_L ^= 1;                       /* 乒乓键 */
+  96   1        Delay20ms();
+  97   1      }
+  98          
+  99          
+ 100          /********************* INT1中断函数 *************************/
+ 101          void INT1_int( void ) interrupt 2       /* 进中断时已经清除标志 */
+ 102          {
+ 103   1        F_R ^= 1;                       /* 乒乓键 */
+ 104   1        Delay20ms();                    /* 软件延时消抖动 */
+ 105   1      }
+ 106          
+ 107          
+ 108          /********************** T0 1ms中断函数 ************************/
+ 109          void T0_int( void ) interrupt 1
+ 110          {
+ 111   1        DisplayScan();                  /* 1ms扫描显示一位 */
+ 112   1        F_T0 = 1;                       /* 1ms标志 */
+ 113   1      }
+ 114          
+ 115          
+ 116          u8 ASC2num( u8 asc )
+C51 COMPILER V9.57.0.0   MAIN                                                              06/05/2022 13:48:00 PAGE 3   
+
+ 117          {
+ 118   1        if ( asc <= '9' && asc >= '0' )
+ 119   1          return(asc - '0');
+ 120   1        else return(DIS_BLACK);
+ 121   1      }
+ 122          
+ 123          
+ 124          /********************** 显示数串函数 ************************/
+ 125          void ReflashDisp( void )
+ 126          {
+ 127   1        u8 i;
+ 128   1      
+ 129   1        for ( i = 0; i < 8; i++ )
+ 130   1          LED8[i] = ASC2num( disp_string[(disp_index + i) % StrLen] );
+ 131   1      }
+ 132          
+ 133          
+ 134          bit interpret()
+ 135          {
+ 136   1        u8 xdata string[20],xdata *sptr;  
+ 137   1        u16 dtype,dvalue,dlenth;
+ 138   1        bit valid=0,endline;
+ 139   1        u16 dir=0,pace=0;
+ 140   1      
+ 141   1        while(RXready()) {
+ 142   2          scanf("%s",string);     
+ 143   2          if(strstr(string,"set")) valid=1; break;
+ 144   2        }   
+ 145   1        if(!valid) return 0;   
+ 146   1        
+ 147   1        //printf("I'm here!\n");
+ 148   1        
+ 149   1        while(RXready()) {
+ 150   2          scanf("%s",string); sptr=string;
+ 151   2            for(endline=0;!endline;) {
+ 152   3                dtype=sscanf(sptr,"%d%n",&dvalue,&dlenth);
+ 153   3            switch(dtype) {
+ 154   4              case 0: sptr++; break;
+ 155   4              case 1: sptr+=dlenth;
+ 156   4              dir=dvalue/10;
+ 157   4              pace=dvalue%10;
+ 158   4              if(dir<=2&&pace<=2){
+ 159   5                F_Dir=dir;
+ 160   5                if(pace==0){
+ 161   6                  speed=500;
+ 162   6                }
+ 163   5                else if(pace==1){
+ 164   6                  speed=1000;
+ 165   6                }
+ 166   5                else{
+ 167   6                  speed=2000;
+ 168   6                }
+ 169   5              }
+ 170   4              else{
+ 171   5                valid=0;
+ 172   5              }
+ 173   4                  
+ 174   4              break; 
+ 175   4              default:endline=1;
+ 176   4                }
+ 177   3          }
+ 178   2          }
+C51 COMPILER V9.57.0.0   MAIN                                                              06/05/2022 13:48:00 PAGE 4   
+
+ 179   1        return valid;
+ 180   1      }  
+ 181          
+ 182          /********************** UART串口处理函数 ************************/
+ 183          void ModifyRTC(void)
+ 184          {
+ 185   1        if(!RXready()) return;  
+ 186   1        if(!interpret()) {   
+ 187   2          printf("输入格式为\"设置 xx\"\n");
+ 188   2          printf("前一个取值为012 对应方向 后一个x对应速度，0是0.5s 1是1s 2是2s\n");  
+ 189   2          return;
+ 190   2        } 
+ 191   1        ReflashDisp();
+ 192   1      }
+ 193          
+ 194          /********************** 主函数 ************************/
+ 195          void main( void )
+ 196          {
+ 197   1        int i;
+ 198   1      
+ 199   1        Port_Init();
+ 200   1        T0_Init();
+ 201   1        INT_Init();
+ 202   1        Uart_Init(9600);
+ 203   1      
+ 204   1        ReflashDisp(); /* 显示学号 */
+ 205   1        while ( 1 )
+ 206   1        {
+ 207   2          if ( F_L )
+ 208   2          {
+ 209   3            switch ( F_Dir )
+ 210   3            {
+ 211   4            case 0: F_Dir = 1; break;
+ 212   4            case 1: F_Dir = 0; break;
+ 213   4            case 2: F_Dir = 0; break;
+ 214   4            }
+ 215   3            F_L = 0;
+ 216   3          }
+ 217   2          if ( F_R )
+ 218   2          {
+ 219   3            switch ( F_Dir )
+ 220   3            {
+ 221   4            case 0: F_Dir = 2; break;
+ 222   4            case 1: F_Dir = 2; break;
+ 223   4            case 2: F_Dir = 1; break;
+ 224   4            }
+ 225   3            F_R = 0;
+ 226   3          }
+ 227   2      
+ 228   2          if ( F_T0 )
+ 229   2          {
+ 230   3            F_T0 = 0;
+ 231   3            if ( ++i >= speed )
+ 232   3            {
+ 233   4              i   = 0;
+ 234   4              //printf("hello\n");
+ 235   4              disp_index  = (disp_index - F_Dir + 1 + StrLen) % StrLen;
+ 236   4              ReflashDisp();
+ 237   4            }
+ 238   3          }
+ 239   2          
+ 240   2          ModifyRTC();
+C51 COMPILER V9.57.0.0   MAIN                                                              06/05/2022 13:48:00 PAGE 5   
+
+ 241   2        }
+ 242   1      }
+ 243          
+ 244          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    782    ----
+   CONSTANT SIZE    =    108    ----
+   XDATA SIZE       =   ----      22
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      4      11
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3       2
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

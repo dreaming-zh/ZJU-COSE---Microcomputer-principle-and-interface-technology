@@ -1,0 +1,26 @@
+修改自exp2
+可以使用serialcharts进行绘图
+参考配置文件如下：
+[_setup_]
+port=COM5
+baudrate=38400
+width=1000
+height=201
+background_color = white
+grid_h_origin = 100
+grid_h_step = 10
+grid_h_color = #EEE
+grid_h_origin_color = #CCC
+grid_v_origin = 0
+grid_v_step = 10
+grid_v_color = #EEE
+grid_v_origin_color = transparent
+[_default_]
+min=25
+max=40
+[Field1]
+color=gray
+min=4
+max=6
+[Field2]
+color=blue

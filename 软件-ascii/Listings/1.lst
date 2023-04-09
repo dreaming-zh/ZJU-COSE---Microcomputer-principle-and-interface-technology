@@ -1,0 +1,53 @@
+A51 MACRO ASSEMBLER  1                                                                    05/22/2022 15:08:32 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\1.obj
+ASSEMBLER INVOKED BY: E:\Keil_v5\C51\BIN\A51.EXE 1.a51 SET(SMALL) DEBUG PRINT(.\Listings\1.lst) OBJECT(.\Objects\1.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+0000                   1          ORG 0000H
+0000 7F08              2          MOV R7,#8
+0002 7820              3          MOV R0,#20H
+0004 7930              4          MOV R1,#30H
+0006 752014            5              MOV 20H,#14H
+                       6              
+0009 E6                7     LOOP:MOV A,@R0
+000A 12001B            8          LCALL ASCII
+000D F7                9              MOV @R1,A
+000E 09               10              INC R1
+000F E6               11              MOV A,@R0
+0010 C4               12              SWAP A
+0011 12001B           13              LCALL ASCII
+0014 F7               14              MOV @R1,A
+0015 09               15              INC R1
+0016 08               16              INC R0
+0017 DFF0             17              DJNZ R7,LOOP
+0019 80FE             18              SJMP $
+                      19     
+001B 540F             20     ASCII:ANL A,#0FH
+001D B40A00           21           CJNE A,#0AH,NEXT
+0020 4002             22     NEXT: JC LOOP1
+0022 2407             23           ADD A,#07H                    
+0024 2430             24     LOOP1:ADD A,#30H
+0026 22               25           RET
+                      26               END
+A51 MACRO ASSEMBLER  1                                                                    05/22/2022 15:08:32 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ASCII. . . . . . .  C ADDR   001BH   A   
+LOOP . . . . . . .  C ADDR   0009H   A   
+LOOP1. . . . . . .  C ADDR   0024H   A   
+NEXT . . . . . . .  C ADDR   0020H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

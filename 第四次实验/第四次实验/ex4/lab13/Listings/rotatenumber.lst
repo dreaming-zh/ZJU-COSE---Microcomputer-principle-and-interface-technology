@@ -1,0 +1,13 @@
+C51 COMPILER V9.60.0.0   ROTATENUMBER                                                      06/01/2022 22:09:48 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE ROTATENUMBER
+OBJECT MODULE PLACED IN .\Objects\rotatenumber.obj
+COMPILER INVOKED BY: C:\Users\86139\Desktop\mclab\KeilUV5\C51\BIN\C51.EXE rotatenumber.c OPTIMIZE(8,SPEED) BROWSE DEBUG 
+                    -OBJECTEXTEND PRINT(.\Listings\rotatenumber.lst) TABS(2) OBJECT(.\Objects\rotatenumber.obj)
+
+line level    source
+
+*** ERROR C318 OF rotatenumber.c: can't open file 'rotatenumber.c'
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

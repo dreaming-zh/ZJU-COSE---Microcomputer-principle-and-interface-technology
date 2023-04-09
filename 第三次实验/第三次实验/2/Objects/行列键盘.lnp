@@ -1,0 +1,6 @@
+".\Objects\STARTUP.obj",
+".\Objects\key16.obj",
+".\Objects\LED8.obj",
+".\Objects\行列键盘.obj" 
+TO ".\Objects\行列键盘" 
+PRINT(".\Listings\行列键盘.m51") RAMSIZE(256) 

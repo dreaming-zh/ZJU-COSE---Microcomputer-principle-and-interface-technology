@@ -1,0 +1,133 @@
+C51 COMPILER V9.60.0.0   WUWEI                                                             05/19/2022 14:30:21 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE WUWEI
+OBJECT MODULE PLACED IN .\Objects\wuwei.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE wuwei.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\wuwei.
+                    -lst) TABS(2) OBJECT(.\Objects\wuwei.obj)
+
+line level    source
+
+   1          #include <stc15.h>
+   2          #include "led8.h"
+   3          /************* 外部变量和本地变量声明 **************/
+   4          extern u8 LED8[8]; //显示缓冲，在 LED8.c 中声明
+   5          bit F_T0=0; //1ms 中断软标志
+   6          bit F_incdec=0,F_stop=0; //运行参数，初始为增量计数器，不停止
+   7          u8 Count=0; //unsigned char 与 s8,u16 在 led8.h 中定义
+   8          u8 number=0;
+   9          /**************** T0 中断初始化函数 ******************/
+  10          void T0_Init()
+  11          {
+  12   1      #define MAIN_Fosc 22118400L //定义主时钟
+  13   1      #define Timer0_Reload (65536UL -(MAIN_Fosc / 1000))
+  14   1      AUXR = 0x80; //Timer0 set as 1T, 16 bits timer auto-reload,
+  15   1      TH0 = (u8)(Timer0_Reload / 256);
+  16   1      TL0 = (u8)(Timer0_Reload % 256);
+  17   1      ET0 = 1; //T0 interrupt enable
+  18   1      PT0 = 1; //设置 T0 我高优先级
+  19   1      TR0 = 1; //启动 T0
+  20   1      }
+  21          /**************** INT0/INT1 中断初始化函数 ******************/
+  22          void INT_Init()
+  23          {
+  24   1      IT0 = 1; //INT0 下降沿中断
+  25   1        IE1 = 0; //外中断 1 标志位
+  26   1      IE0 = 0; //外中断 0 标志位
+  27   1      EX1 = 1; //INT1 Enable
+  28   1      EX0 = 1; //INT0 Enable
+  29   1      EA = 1; //允许总中断
+  30   1      }
+  31          /********************** 端口初始化 ************************/
+  32          void Port_Init()
+  33          {
+  34   1      P0M1 = 0; P0M0 = 0; //设置为准双向口
+  35   1      P1M1 = 0; P1M0 = 0; //设置为准双向口
+  36   1      P2M1 = 0; P2M0 = 0; //设置为准双向口
+  37   1      P3M1 = 0; P3M0 = 0; //设置为准双向口
+  38   1      P4M1 = 0; P4M0 = 0; //设置为准双向口
+  39   1      P5M1 = 0; P5M0 = 0; //设置为准双向口
+  40   1      P6M1 = 0; P6M0 = 0; //设置为准双向口
+  41   1      P7M1 = 0; P7M0 = 0; //设置为准双向口
+  42   1      }
+  43          void delay_ms(u8 ms)
+  44          {
+  45   1      u16 i;
+  46   1      do{
+  47   2      i = MAIN_Fosc / 16000;
+  48   2      while(--i) ; //16T per loop
+  49   2      }while(--ms);
+  50   1      }
+  51          /********************* INT0 中断函数 *************************/
+  52          void INT0_int (void) interrupt 0 //进中断时已经清除标志
+  53          {
+  54   1      F_incdec^=1; //sw17 乒乓键，改变计数方向标志
+C51 COMPILER V9.60.0.0   WUWEI                                                             05/19/2022 14:30:21 PAGE 2   
+
+  55   1      delay_ms(20); //软件延时消抖动
+  56   1      }
+  57          /********************* INT1 中断函数 *************************/
+  58          void INT1_int (void) interrupt 2 //进中断时已经清除标志
+  59          {
+  60   1      F_stop^=1; //sw18 乒乓键，改变计数启停标志
+  61   1      delay_ms(20); //软件延时消抖动
+  62   1      }
+  63          /********************** T0 1ms 中断函数 ************************/
+  64          void T0_int (void) interrupt 1
+  65          {
+  66   1      DisplayScan(); //1ms 扫描显示一位
+  67   1      F_T0 = 1; //1ms 时间到标志
+  68   1      }
+  69          /********************** 显示计数函数 ************************/
+  70          void DisplayCount(void)
+  71          {
+  72   1      LED8[6] = number/10;
+  73   1      LED8[7] = number%10;
+  74   1      LED8[3] = Count/100; //百位
+  75   1      LED8[4] = (Count%100) / 10; //十位
+  76   1      LED8[5] = Count % 10+32; //个位和小数点
+  77   1      }
+  78          /********************** 主函数 ************************/
+  79          
+  80          void main(void)
+  81          {
+  82   1      u16 i=0;
+  83   1      Port_Init(); //初始化
+  84   1      T0_Init();
+  85   1      INT_Init();
+  86   1      for(i=0; i<8; i++) LED8[i] = DIS_BLACK; //上电消隐
+  87   1      while(1) {
+  88   2      if(F_T0) { //1ms 到
+  89   3      F_T0 = 0;
+  90   3      if(!F_stop)
+  91   3      if(++i >= 1000) { //1 秒到
+  92   4      i=0;
+  93   4      if(!F_incdec){ //根据计数方向更新计数
+  94   5      if(++Count==200) Count=0;
+  95   5      } else {
+  96   5      if(Count==0) Count=199;
+  97   5      else Count--;
+  98   5      }
+  99   4      
+ 100   4      }
+ 101   3      number=i/10;
+ 102   3      DisplayCount(); //更新显示缓冲区
+ 103   3      }
+ 104   2      }
+ 105   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    354    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+C51 COMPILER V9.60.0.0   WUWEI                                                             05/19/2022 14:30:21 PAGE 3   
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

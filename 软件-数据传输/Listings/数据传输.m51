@@ -1,0 +1,69 @@
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                    05/11/2022  20:53:33  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22.2.0, INVOKED BY:
+E:\KEIL_V5\C51\BIN\BL51.EXE .\Objects\1.obj TO .\Objects\数据传输 PRINT (.\Listings\数据传输.m51) RAMSIZE (256)
+
+
+INPUT MODULES INCLUDED:
+  .\Objects\1.obj (1)
+
+
+LINK MAP OF MODULE:  .\Objects\数据传输 (1)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0128H     ABSOLUTE     
+
+
+
+SYMBOL TABLE OF MODULE:  .\Objects\数据传输 (1)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        1
+  C:0100H         SYMBOL        BEG
+  C:0104H         SYMBOL        LP1
+  C:0112H         SYMBOL        LP2
+  C:0120H         SYMBOL        LP3
+  C:0000H         LINE#         2
+  C:0100H         LINE#         5
+  C:0102H         LINE#         6
+  C:0104H         LINE#         9
+  C:0105H         LINE#         10
+  C:0106H         LINE#         11
+  C:0107H         LINE#         12
+  C:0109H         LINE#         14
+  C:010BH         LINE#         15
+  C:010DH         LINE#         16
+  C:010FH         LINE#         17
+  C:0112H         LINE#         20
+  C:0113H         LINE#         21
+  C:0114H         LINE#         22
+  C:0115H         LINE#         23
+  C:0116H         LINE#         24
+  C:0117H         LINE#         25
+  C:0118H         LINE#         26
+  C:011AH         LINE#         28
+  C:011CH         LINE#         29
+  C:011EH         LINE#         30
+  C:0120H         LINE#         33
+  C:0121H         LINE#         34
+  C:0122H         LINE#         35
+  C:0123H         LINE#         36
+  C:0124H         LINE#         37
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  05/11/2022  20:53:33  PAGE 2
+
+
+  C:0126H         LINE#         38
+  -------         ENDMOD        1
+
+Program Size: data=8.0 xdata=0 code=296
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

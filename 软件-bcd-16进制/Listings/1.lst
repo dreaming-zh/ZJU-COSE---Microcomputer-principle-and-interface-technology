@@ -1,0 +1,50 @@
+A51 MACRO ASSEMBLER  1                                                                    05/22/2022 12:07:09 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\1.obj
+ASSEMBLER INVOKED BY: E:\Keil_v5\C51\BIN\A51.EXE 1.a51 SET(SMALL) DEBUG PRINT(.\Listings\1.lst) OBJECT(.\Objects\1.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+0000                   1          ORG 0000H
+0000 7F08              2              MOV R7,#8
+0002 7820              3              MOV R0,#20H
+0004 7930              4              MOV R1,#30H
+0006 752037            5              MOV 20H,#37H
+0009 E6                6     LOOP:MOV A,@R0
+000A 120013            7          LCALL TF
+000D 09                8              INC R1
+000E 08                9              INC R0
+000F DFF8             10              DJNZ R7,LOOP
+0011 80FE             11              SJMP $
+                      12     
+0013 540F             13     TF:  ANL A,#0FH
+0015 FA               14          MOV R2,A
+0016 E6               15              MOV A,@R0
+0017 54F0             16              ANL A,#0F0H
+0019 C4               17              SWAP A
+001A 75F00A           18              MOV B,#10
+001D A4               19              MUL AB
+001E 2A               20              ADD A,R2
+001F F7               21              MOV @R1,A
+0020 22               22              RET
+                      23     
+                      24              END
+A51 MACRO ASSEMBLER  1                                                                    05/22/2022 12:07:09 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+B. . . . . . . . .  D ADDR   00F0H   A   
+LOOP . . . . . . .  C ADDR   0009H   A   
+TF . . . . . . . .  C ADDR   0013H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

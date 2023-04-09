@@ -1,0 +1,6 @@
+".\Objects\STARTUP.obj",
+".\Objects\key16.obj",
+".\Objects\LED8.obj",
+".\Objects\时钟走时.obj" 
+TO ".\Objects\时钟走时" 
+PRINT(".\Listings\时钟走时.m51") RAMSIZE(256) 

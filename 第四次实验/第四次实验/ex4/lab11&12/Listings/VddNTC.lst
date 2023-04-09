@@ -1,0 +1,170 @@
+C51 COMPILER V9.57.0.0   VDDNTC                                                            06/05/2022 13:18:51 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE VDDNTC
+OBJECT MODULE PLACED IN .\Objects\VddNTC.obj
+COMPILER INVOKED BY: F:\Keil\C51\BIN\C51.EXE VddNTC.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\VddNT
+                    -C.lst) TABS(2) OBJECT(.\Objects\VddNTC.obj)
+
+line level    source
+
+   1          #include <stc15.h>
+   2          #include <intrins.h>
+   3          #include <string.h>
+   4          #include <stdio.h>
+   5          #include "gdef.h"
+   6          #include "led8.h"
+   7          #include "adc.h"
+   8          #include "serial.h"
+   9          
+  10          #define StrLen strlen(disp_string)
+  11          
+  12          /*************  外部变量和本地变量声明    **************/  
+  13          extern u8  LED8[8];         //显示缓冲
+  14          
+  15          bit F_T0=0;     //1ms中断软标志
+  16          u8  disp_index=0, F_Dir=1;  //F_Dir方向标记，0左移 1 不动 2右移
+  17          
+  18          /**************** T0定时器初始化函数 ******************/
+  19          void T0_Init()
+  20          {
+  21   1        #define     Timer_Reload   (65536UL -(MAIN_Fosc / 1000))       //Timer0 中断频率, 1000次/秒
+  22   1      
+  23   1          AUXR = 0x80;    //Timer0 set as 1T, 16 bits timer auto-reload
+  24   1          TH0 = (u8)(Timer_Reload / 256);
+  25   1          TL0 = (u8)(Timer_Reload % 256);
+  26   1          TR0 = 1;    //Timer0 run
+  27   1      }   
+  28          
+  29          /**************** 中断初始化函数 ******************/
+  30          void INT_Init()
+  31          {
+  32   1        ET0 = 1;    //Timer0 interrupt enable
+  33   1        PT0 = 1;
+  34   1        ET1 = 0;  //Tim1仅当作波特率发生器
+  35   1          ES = 1;   
+  36   1        EA = 1;     //允许总中断
+  37   1      } 
+  38          
+  39          /********************** 端口初始化 ************************/
+  40          void Port_Init()
+  41          {
+  42   1          P0M1 = 0;   P0M0 = 0;   //设置为准双向口
+  43   1          P1M1 = 0;   P1M0 = 0;   //设置为准双向口
+  44   1          P2M1 = 0;   P2M0 = 0;   //设置为准双向口
+  45   1          P3M1 = 0;   P3M0 = 0;   //设置为准双向口
+  46   1          P4M1 = 0;   P4M0 = 0;   //设置为准双向口
+  47   1          P5M1 = 0;   P5M0 = 0;   //设置为准双向口
+  48   1          P6M1 = 0;   P6M0 = 0;   //设置为准双向口
+  49   1          P7M1 = 0;   P7M0 = 0;   //设置为准双向口
+  50   1      }
+  51          
+  52          /********************** T0 1ms中断函数 ************************/
+  53          void T0_int (void) interrupt TIMER0_VECTOR
+  54          {
+C51 COMPILER V9.57.0.0   VDDNTC                                                            06/05/2022 13:18:51 PAGE 2   
+
+  55   1          DisplayScan();  //1ms扫描显示一位
+  56   1          F_T0 = 1;      //1ms标志    
+  57   1      } 
+  58          
+  59          void DispClr()
+  60          { 
+  61   1        u8 i;
+  62   1      
+  63   1        for(i=0; i<8; i++)  LED8[i] = DIS_BLACK; //上电消隐
+  64   1      }
+  65          
+  66          u16 DispVdd()
+  67          {
+  68   1        u8 i;
+  69   1        u16 j;
+  70   1      
+  71   1        for(j=0,i=0; i<16; i++)   j += Get_ADC10bitResult(8); //内部基准ADC, P1ASF=0, 读0通道
+  72   1          j = (u32)128000UL*16 / j;  // ADC = 1024 * Uref / Ux, 则 Ux = 1024 * Uref / ADC = 1024 * 1.25 / ADC = 
+             -1280 / ADC
+  73   1      
+  74   1          LED8[0] = j / 100 + DIS_DOT;    //显示MCU电压值, 计算时放大了100倍, 电压有两位小数.
+  75   1          LED8[1] = (j % 100) / 10;
+  76   1          LED8[2] = j % 10; 
+  77   1      
+  78   1        return j;
+  79   1      }    
+  80          
+  81          u16 DispNTC()
+  82          {
+  83   1        u8 i;
+  84   1        u16 j;
+  85   1      
+  86   1        for(j=0,i=0; i<4; i++) j += Get_ADC10bitResult(3);  //通道3，NTC  
+  87   1          j = get_temperature(j); //计算温度值
+  88   1      
+  89   1          if(j >= 400)    F0 = 0, j -= 400;       //温度 >= 0度
+  90   1          else            F0 = 1, j  = 400 - j;   //温度 <  0度
+  91   1          LED8[4] = j / 1000;     //显示温度值
+  92   1          LED8[5] = (j % 1000) / 100;
+  93   1          LED8[6] = (j % 100) / 10 + DIS_DOT;
+  94   1          LED8[7] = j % 10;
+  95   1      
+  96   1          if(LED8[4] == 0)   //可能是3位或者2位温度
+  97   1          if(LED8[5] == 0)  {       
+  98   2              LED8[4] = LED8[5] = DIS_BLACK;
+  99   2            if(F0)  LED8[5] = DIS_;     //显示- 
+ 100   2          } else {
+ 101   2            LED8[4] = DIS_BLACK;
+ 102   2            if(F0)  LED8[4] = DIS_;     //显示-
+ 103   2          }
+ 104   1      
+ 105   1        return j;
+ 106   1      }   
+ 107          
+ 108          
+ 109          /********************** 主函数 ************************/
+ 110          void main(void)
+ 111          {
+ 112   1        static u16 msecond=0;
+ 113   1        static bit NTC=0;
+ 114   1      
+ 115   1        Port_Init();
+C51 COMPILER V9.57.0.0   VDDNTC                                                            06/05/2022 13:18:51 PAGE 3   
+
+ 116   1        T0_Init();
+ 117   1        INT_Init();    
+ 118   1        ADC_Init();
+ 119   1        Uart_Init(38400);
+ 120   1         
+ 121   1        DispClr();
+ 122   1          while(1) {
+ 123   2          if(F_T0) {  //1ms到
+ 124   3            F_T0 = 0;
+ 125   3                  if(++msecond >= 500) {   //500ms测一个数据
+ 126   4              msecond = 0;  
+ 127   4              if(!NTC) {             
+ 128   5                //printf("Vdd:%3.2f\t",DispVdd()/100.0);
+ 129   5                printf("%3.2f",DispVdd()/100.0);
+ 130   5                P1ASF = 0x01<<3;       //设置P1.3用于ADC通道3，NTC连接到ADC3
+ 131   5              }  else {
+ 132   5                //printf("NTC:%4.1f\n",DispNTC()/10.0);
+ 133   5                printf("%4.1f",DispNTC()/10.0);
+ 134   5                P1ASF = 0;        //准备P1用于第9通道测试内部BGV
+ 135   5              }
+ 136   4              NTC^=1;
+ 137   4                  }  
+ 138   3              }
+ 139   2          }
+ 140   1      } 
+ 141          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    584    ----
+   CONSTANT SIZE    =     12    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      4       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
